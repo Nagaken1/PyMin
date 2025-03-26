@@ -3,6 +3,7 @@ from symbol_resolver import get_symbol_code
 from kabu_ws_client import KabuWebSocketClient
 from ohlc_builder import OHLCBuilder
 from data_writer import OHLCWriter, TickWriter
+from market_time_utils import is_closing_end
 from auth import get_token
 
 from datetime import datetime, time as dtime
@@ -12,7 +13,7 @@ import time
 
 import os
 import sys
-from datetime import datetime
+
 
 # スクリプトのある場所を基準にする（絶対パス化）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
