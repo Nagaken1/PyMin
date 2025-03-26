@@ -33,7 +33,19 @@ class OHLCWriter:
                 self.csv_writer.writeheader()
 
     def write_row(self, ohlc: dict):
-        ts = datetime.fromisoformat(ohlc["Timestamp"])
+        """
+        OHLCデータを1行CSVに書き込む。
+
+        Parameters:
+            ohlc (dict): {"Timestamp": ISO文字列, "Open": float, ...}
+        """
+        # ISO 8601形式をサポートするように修正（+09:00対応）
+        try:
+            ts = datetime.fromisoformat(ohlc["Timestamp"])
+        except Exception as e:
+            print(f"[ERROR] Timestamp変換失敗: {ohlc['Timestamp']} → {e}", flush=True)
+            return
+
         self._open_file_if_needed(ts)
         self.csv_writer.writerow(ohlc)
         self.file_handle.flush()
