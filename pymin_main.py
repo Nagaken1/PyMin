@@ -110,9 +110,18 @@ def main():
         #ティックをそのまま記録（すべての価格を確実に残す）
         tick_writer.write_tick(price, ts)#←ティック記録が不要ならコメントアウトする
 
+        # クロージングセッション最後に次の価格でダミー追加
+        if builder.first_price_of_next_session is None and not is_closing_end(ts):
+            builder.first_price_of_next_session = price
+
         ohlc = builder.update(price, ts)
         if ohlc:
             writer.write_row(ohlc)
+
+        # クロージング終了の補完が可能かチェック
+        dummy_ohlc = builder.finalize_with_next_session_price(ts)
+        if dummy_ohlc:
+            writer.write_row(dummy_ohlc)
 
     client = KabuWebSocketClient(on_tick)
     client.start()
