@@ -118,7 +118,7 @@ def main():
 
         ohlc = builder.update(price, ts)
         if ohlc:
-            print(f"[OHLC] 出力: {ohlc}", flush=True)
+            #print(f"[OHLC] 出力: {ohlc}", flush=True)
             writer.write_row(ohlc)
 
         # クロージング終了の補完が可能かチェック
