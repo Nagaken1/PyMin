@@ -10,7 +10,7 @@ class OHLCBuilder:
         self.first_price_of_next_session = None
 
     def update(self, price: float, ts: datetime):
-        print(f"[DEBUG] update called: {ts} / price: {price}", flush=True)
+        #print(f"[DEBUG] update called: {ts} / price: {price}", flush=True)
 
         minute = ts.replace(second=0, microsecond=0)
         if self.current_minute and minute != self.current_minute:

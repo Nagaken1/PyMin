@@ -107,7 +107,7 @@ def main():
     tick_writer = TickWriter()#←ティック記録が不要ならコメントアウトする
 
     def on_tick(price, ts):
-        print(f"[TICK] {ts} 現値: {price}", flush=True)
+        #print(f"[TICK] {ts} 現値: {price}", flush=True)
 
         #ティックをそのまま記録（すべての価格を確実に残す）
         tick_writer.write_tick(price, ts)#←ティック記録が不要ならコメントアウトする
