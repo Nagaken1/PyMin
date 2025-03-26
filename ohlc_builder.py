@@ -15,6 +15,7 @@ class OHLCBuilder:
         minute = ts.replace(second=0, microsecond=0)
         if self.current_minute and minute != self.current_minute:
             #print(f"[DEBUG] New minute: {minute}, finalizing previous minute: {self.current_minute}", flush=True)
+            self.prices.append(price)
             ohlc = self._finalize_ohlc()
             self.current_minute = minute
             self.prices = [price]
