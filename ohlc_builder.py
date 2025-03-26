@@ -10,18 +10,17 @@ class OHLCBuilder:
         self.first_price_of_next_session = None
 
     def update(self, price: float, ts: datetime):
-        self.last_price = price
-        minute = ts.replace(second=0, microsecond=0)
+        print(f"[DEBUG] update called: {ts} / price: {price}", flush=True)
 
-        if minute != self.current_minute:
+        minute = ts.replace(second=0, microsecond=0)
+        if self.current_minute and minute != self.current_minute:
+            print(f"[DEBUG] New minute: {minute}, finalizing previous minute: {self.current_minute}", flush=True)
             ohlc = self._finalize_ohlc()
             self.current_minute = minute
-            self.prices = []
+            self.prices = [price]
+            return ohlc
 
-            # クロージングセッション開始ならダミー生成
-            if is_closing_start(ts) and self.last_price:
-                return self._build_ohlc(self.last_price, minute, is_dummy=True)
-
+        self.current_minute = minute if self.current_minute is None else self.current_minute
         self.prices.append(price)
         return None
 
