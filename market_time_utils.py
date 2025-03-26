@@ -1,4 +1,4 @@
-from datetime import datetime, time as dtime
+from datetime import datetime, time as dtime, timedelta
 
 def is_closing_session(ts: datetime) -> bool:
     t = ts.time()

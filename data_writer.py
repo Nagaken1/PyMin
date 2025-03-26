@@ -1,6 +1,6 @@
 import os
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime, time as dtime, timedelta
 
 class OHLCWriter:
     def __init__(self, output_dir="data"):
