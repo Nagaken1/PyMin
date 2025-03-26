@@ -29,7 +29,7 @@ def main():
         df.to_csv(args.output, index=False)
         print(f"[OK] 出力成功: {args.output}", flush=True)
     else:
-        print("[INFO] 出力なし")
+        print("[INFO] 出力なし", flush=True)
 
 if __name__ == "__main__":
     main()

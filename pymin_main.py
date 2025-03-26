@@ -2,7 +2,7 @@ from term_utils import get_active_term
 from symbol_resolver import get_symbol_code
 from kabu_ws_client import KabuWebSocketClient
 from ohlc_builder import OHLCBuilder
-from data_writer import OHLCWriter
+from data_writer import OHLCWriter, TickWriter
 from auth import get_token
 
 from datetime import datetime, time as dtime
@@ -68,7 +68,7 @@ def is_market_closed(now: datetime) -> bool:
 
 def get_exchange_code(now: datetime) -> int:
     t = now.time()
-    return 23 if dtime(8, 45) <= t <= dtime(15, 45) else 24
+    return 23 if dtime(8, 43) <= t <= dtime(15, 47) else 24
 
 def register_symbol(symbol_code, exchange_code, token):
     url = f"{API_BASE_URL}/register"
@@ -103,8 +103,13 @@ def main():
 
     builder = OHLCBuilder()
     writer = OHLCWriter()
+    tick_writer = TickWriter()#←ティック記録が不要ならコメントアウトする
 
     def on_tick(price, ts):
+
+        #ティックをそのまま記録（すべての価格を確実に残す）
+        tick_writer.write_tick(price, ts)#←ティック記録が不要ならコメントアウトする
+
         ohlc = builder.update(price, ts)
         if ohlc:
             writer.write_row(ohlc)
