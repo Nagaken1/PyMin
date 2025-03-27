@@ -57,7 +57,7 @@ class PriceHandler:
             return
 
         last_minute = self.ohlc_builder.current_minute
-        current_minute = now.replace(second=0, microsecond=0)
+        current_minute = now.replace(second=0, microsecond=0, tzinfo=None)
 
         while last_minute + timedelta(minutes=1) < current_minute:
             last_minute += timedelta(minutes=1)

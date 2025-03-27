@@ -90,7 +90,7 @@ def main():
 
     try:
         while True:
-            now = datetime.now().time()
+            now = datetime.now().replace(tzinfo=None)
             price_handler.fill_missing_minutes(now)
             if now == dtime(6, 5):
                 print("[INFO] 午前6:05になったため、自動終了します。")

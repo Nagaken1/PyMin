@@ -17,7 +17,7 @@ class OHLCBuilder:
         ティックを受信し、1分足のOHLCを更新。
         新しい1分が始まった場合は、直前のOHLCを返す。
         """
-        minute = timestamp.replace(second=0, microsecond=0)
+        minute = timestamp.replace(second=0, microsecond=0, tzinfo=None)
 
         # 最初の1本目
         if self.current_minute is None:
@@ -64,7 +64,7 @@ class OHLCBuilder:
         if self.first_price_of_next_session is None:
             return None
 
-        minute = now.replace(second=0, microsecond=0)
+        minute = now.replace(second=0, microsecond=0, tzinfo=None)
 
         dummy = {
             "time": minute,
