@@ -1,19 +1,32 @@
 import requests
-import json
+from config.settings import API_BASE_URL, FUTURE_CODE
 
-# キャッシュ（限月ごとの銘柄コード）
+# 銘柄コードキャッシュ
 _symbol_cache = {}
 
-API_BASE_URL = "http://localhost:18080/kabusapi"
 
-# ------------------------------------------------------------------------------
-# 関数名 : get_symbol_code
-# 概　要 : 限月（YYYYMM）から銘柄コードを取得（キャッシュ付き）
-# 引　数 :
-#     term (str)  : 例 "202506"
-#     token (str) : 認証トークン（main.py から受け取る）
-# ------------------------------------------------------------------------------
-def get_symbol_code(term: str, token: str) -> str:
+def get_active_term(now) -> int:
+    """
+    現在の日付から、最も近い限月（YYYYMM）を返す。
+    限月は3・6・9・12月（3の倍数）に切り上げ。
+    """
+    year = now.year
+    month = now.month
+
+    # 3の倍数の月へ切り上げ（3, 6, 9, 12）
+    future_month = ((month - 1) // 3 + 1) * 3
+    if future_month > 12:
+        future_month -= 12
+        year += 1
+
+    return year * 100 + future_month
+
+
+def get_symbol_code(term: int, token: str) -> str:
+    """
+    限月（YYYYMM）から銘柄コードを取得する。
+    結果はキャッシュに保存して再利用。
+    """
     if term in _symbol_cache:
         return _symbol_cache[term]
 
@@ -23,23 +36,17 @@ def get_symbol_code(term: str, token: str) -> str:
         "X-API-KEY": token
     }
     params = {
-        "FutureCode": "NK225mini",  # ← 正しいFutureCode
-        "DerivMonth": int(term)
+        "FutureCode": FUTURE_CODE,
+        "DerivMonth": term
     }
 
     try:
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
-        data = response.json()
-        symbol = data.get("Symbol")
-
-        if not symbol:
-            print(f"[ERROR] Symbolが取得できません。レスポンス: {data}", flush=True)
-            return None
-
+        symbol = response.json()["Symbol"]
         _symbol_cache[term] = symbol
+        print(f"[DEBUG] 銘柄コード取得成功: {symbol}")
         return symbol
-
     except Exception as e:
-        print(f"[ERROR] 銘柄コード取得失敗: {e}", flush=True)
+        print(f"[ERROR] 銘柄コード取得失敗: {e}")
         return None

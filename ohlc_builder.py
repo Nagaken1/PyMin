@@ -1,57 +1,78 @@
 from datetime import datetime
-from market_time_utils import is_closing_start, is_closing_end
+
 
 class OHLCBuilder:
+    """
+    ティックデータから1分足のOHLC（Open, High, Low, Close）を構築するクラス。
+    クロージング補完などにも対応。
+    """
+
     def __init__(self):
         self.current_minute = None
-        self.prices = []
-        self.last_price = None
-        self.closing_buffer = {}  # クロージング補完用
+        self.ohlc = None
         self.first_price_of_next_session = None
 
-    def update(self, price: float, ts: datetime):
-        #print(f"[DEBUG] update called: {ts} / price: {price}", flush=True)
+    def update(self, price: float, timestamp: datetime) -> dict:
+        """
+        ティックを受信し、1分足のOHLCを更新。
+        新しい1分が始まった場合は、直前のOHLCを返す。
+        """
+        minute = timestamp.replace(second=0, microsecond=0)
 
-        minute = ts.replace(second=0, microsecond=0)
-        if self.current_minute and minute != self.current_minute:
-            #print(f"[DEBUG] New minute: {minute}, finalizing previous minute: {self.current_minute}", flush=True)
-            self.prices.append(price)
-            ohlc = self._finalize_ohlc()
+        # 最初の1本目
+        if self.current_minute is None:
             self.current_minute = minute
-            self.prices = [price]
-            return ohlc
+            self.ohlc = {
+                "time": minute,
+                "open": price,
+                "high": price,
+                "low": price,
+                "close": price
+            }
+            return None
 
-        self.current_minute = minute if self.current_minute is None else self.current_minute
-        self.prices.append(price)
-        return None
+        # 同じ1分内 → 更新のみ
+        if minute == self.current_minute:
+            self.ohlc["high"] = max(self.ohlc["high"], price)
+            self.ohlc["low"] = min(self.ohlc["low"], price)
+            self.ohlc["close"] = price
+            return None
 
-    def _finalize_ohlc(self):
-        if self.prices and self.current_minute:
-            return self._build_ohlc_from_prices(self.prices, self.current_minute)
+        # 1分経過 → 前のOHLCを返して、新しい足を作成
+        completed = self.ohlc
+        self.current_minute = minute
+        self.ohlc = {
+            "time": minute,
+            "open": price,
+            "high": price,
+            "low": price,
+            "close": price
+        }
+        return completed
 
-    def _build_ohlc_from_prices(self, prices, minute, is_dummy=False):
-        return {
-            "Timestamp": minute.isoformat(sep=" ", timespec="minutes"),
-            "Open": prices[0],
-            "High": max(prices),
-            "Low": min(prices),
-            "Close": prices[-1],
-            "IsDummy": is_dummy
+    def _finalize_ohlc(self) -> dict:
+        """
+        強制終了時などに、現在構築中のOHLCを返す。
+        """
+        return self.ohlc
+
+    def finalize_with_next_session_price(self, now: datetime) -> dict:
+        """
+        クロージング終了後、次セッションの最初の価格を使って
+        1本分のダミーOHLCを出力（全値に同じ価格を適用）。
+        """
+        if self.first_price_of_next_session is None:
+            return None
+
+        minute = now.replace(second=0, microsecond=0)
+
+        dummy = {
+            "time": minute,
+            "open": self.first_price_of_next_session,
+            "high": self.first_price_of_next_session,
+            "low": self.first_price_of_next_session,
+            "close": self.first_price_of_next_session
         }
 
-    def _build_ohlc(self, price, minute, is_dummy=True):
-        return {
-            "Timestamp": minute.isoformat(sep=" ", timespec="minutes"),
-            "Open": price,
-            "High": price,
-            "Low": price,
-            "Close": price,
-            "IsDummy": is_dummy
-        }
-
-    def finalize_with_next_session_price(self, ts: datetime):
-        """クロージング終了時に、次セッションの初ティックからOHLC補完"""
-        if self.first_price_of_next_session and is_closing_end(ts):
-            minute = ts.replace(second=0, microsecond=0)
-            return self._build_ohlc(self.first_price_of_next_session, minute, is_dummy=True)
-        return None
+        self.first_price_of_next_session = None
+        return dummy

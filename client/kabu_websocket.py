@@ -4,12 +4,20 @@ import json
 import time
 from datetime import datetime
 
+from handler.price_handler import PriceHandler
+
+
 class KabuWebSocketClient:
-    def __init__(self, on_tick_callback):
+    """
+    KabuステーションのWebSocketクライアント。
+    push配信を受信し、PriceHandler に現値を渡す。
+    """
+
+    def __init__(self, price_handler: PriceHandler):
         self.ws = None
         self.thread = None
-        self.on_tick_callback = on_tick_callback
         self.running = False
+        self.price_handler = price_handler
 
     def on_message(self, ws, message):
         try:
@@ -18,24 +26,24 @@ class KabuWebSocketClient:
             timestamp_str = data.get("CurrentPriceTime")
 
             if price is not None and timestamp_str:
-                #  ISO 8601 フォーマットをそのまま扱えるように修正
                 timestamp = datetime.fromisoformat(timestamp_str)
-                self.on_tick_callback(price, timestamp)
+                self.price_handler.handle_tick(price, timestamp)
 
         except Exception as e:
-            print("[ERROR] メッセージ処理エラー:", e, flush=True)
+            print(f"[ERROR] メッセージ処理エラー: {e}")
 
     def on_error(self, ws, error):
-        print("[ERROR] WebSocket エラー:", error, flush=True)
+        print(f"[ERROR] WebSocket エラー: {error}")
 
     def on_close(self, ws, close_status_code, close_msg):
-        print("[INFO] WebSocket 切断", flush=True)
+        print("[INFO] WebSocket 切断")
 
     def on_open(self, ws):
-        print("[INFO] WebSocket 接続成功", flush=True)
+        print("[INFO] WebSocket 接続成功")
 
     def start(self):
         self.running = True
+
         def run():
             while self.running:
                 try:
@@ -48,8 +56,9 @@ class KabuWebSocketClient:
                     )
                     self.ws.run_forever()
                 except Exception as e:
-                    print("[ERROR] 再接続エラー:", e, flush=True)
+                    print(f"[ERROR] 再接続エラー: {e}")
                     time.sleep(5)
+
         self.thread = threading.Thread(target=run)
         self.thread.daemon = True
         self.thread.start()
