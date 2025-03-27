@@ -11,6 +11,7 @@ class OHLCBuilder:
         self.current_minute = None
         self.ohlc = None
         self.first_price_of_next_session = None
+        self.closing_completed = False  # ← 補完済みフラグを追加
 
     def update(self, price: float, timestamp: datetime) -> dict:
         """
@@ -60,8 +61,9 @@ class OHLCBuilder:
         """
         クロージング終了後、次セッションの最初の価格を使って
         1本分のダミーOHLCを出力（全値に同じ価格を適用）。
+        ※ 1回限りの出力に制限される。
         """
-        if self.first_price_of_next_session is None:
+        if self.first_price_of_next_session is None or self.closing_completed:
             return None
 
         minute = now.replace(second=0, microsecond=0, tzinfo=None)
@@ -75,4 +77,5 @@ class OHLCBuilder:
         }
 
         self.first_price_of_next_session = None
+        self.closing_completed = True  # ← 以後出力しないようフラグON
         return dummy

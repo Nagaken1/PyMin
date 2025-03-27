@@ -5,56 +5,57 @@ from datetime import datetime
 
 class OHLCWriter:
     """
-    1分足のOHLCデータをCSVファイルに出力するクラス。
-    日付ごとにファイルを分け、フォルダ「data/」以下に保存。
+    OHLCを日付ごとのCSVファイルに保存するクラス。
+    ファイルは自動で切り替わり、1行ずつ追記される。
     """
 
-    def __init__(self):
+    def __init__(self, output_dir="csv"):
+        self.output_dir = output_dir
+        os.makedirs(self.output_dir, exist_ok=True)
         self.current_date = None
         self.file = None
         self.writer = None
-        self.file_path = None
-        self._init_writer(datetime.now())
 
-    def _init_writer(self, dt: datetime):
+    def _open_new_file(self, date: datetime):
         """
-        指定した日時に基づき、新しいCSVファイルを初期化する。
+        新しい日付のファイルを開く
         """
-        self.current_date = dt.date()
-        date_str = self.current_date.strftime("%Y%m%d")
-        data_dir = "data"
-        os.makedirs(data_dir, exist_ok=True)
+        if self.file:
+            self.file.close()
 
-        self.file_path = os.path.join(data_dir, f"{date_str}_nikkei_mini_future.csv")
-        self.file = open(self.file_path, "a", newline="", encoding="utf-8")
+        self.current_date = date
+        date_str = date.strftime("%Y%m%d")
+        filename = os.path.join(self.output_dir, f"{date_str}_nikkei_mini_future.csv")
+        self.file = open(filename, "a", newline="", encoding="utf-8")
         self.writer = csv.writer(self.file)
 
-        # ヘッダーがなければ書き込む
-        if os.stat(self.file_path).st_size == 0:
+        # ファイルが空ならヘッダーを書く
+        if os.stat(filename).st_size == 0:
             self.writer.writerow(["Time", "Open", "High", "Low", "Close"])
 
     def write_row(self, ohlc: dict):
         """
-        OHLC1本分をCSVに書き出す。
+        OHLCデータをCSVに1行書き込む
         """
-        dt = ohlc["time"]
-        if dt.date() != self.current_date:
-            self.file.close()
-            self._init_writer(dt)
+        time: datetime = ohlc["time"]
+        date_only = time.date()
 
-        row = [
-            dt.strftime("%Y/%m/%d %H:%M"),
+        if self.current_date is None or self.current_date.date() != date_only:
+            self._open_new_file(time)
+
+        self.writer.writerow([
+            time.strftime("%Y-%m-%d %H:%M:%S"),
             ohlc["open"],
             ohlc["high"],
             ohlc["low"],
             ohlc["close"]
-        ]
-        self.writer.writerow(row)
+        ])
         self.file.flush()
 
     def close(self):
         """
-        ファイルを安全に閉じる。
+        ファイルを閉じる
         """
         if self.file:
             self.file.close()
+            self.file = None
