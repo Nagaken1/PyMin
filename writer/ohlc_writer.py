@@ -43,7 +43,7 @@ class OHLCWriter:
             self._init_writer(dt)
 
         row = [
-            dt.strftime("%Y-%m-%d %H:%M"),
+            dt.strftime("%Y/%m/%d %H:%M"),
             ohlc["open"],
             ohlc["high"],
             ohlc["low"],

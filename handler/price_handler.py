@@ -1,9 +1,9 @@
 from datetime import datetime
+from datetime import timedelta
 from writer.ohlc_writer import OHLCWriter
 from writer.tick_writer import TickWriter
 from ohlc_builder import OHLCBuilder
 from utils.time_util import is_closing_end
-
 
 class PriceHandler:
     """
@@ -48,3 +48,30 @@ class PriceHandler:
             self.ohlc_writer.write_row(final)
         if self.tick_writer:
             self.tick_writer.close()
+
+    def fill_missing_minutes(self, now: datetime):
+    #"""
+    #Tickが来なかった1分間のOHLCを補完して出力する。
+    #"""
+        if self.ohlc_builder.current_minute is None:
+            return
+
+        last_minute = self.ohlc_builder.current_minute
+        current_minute = now.replace(second=0, microsecond=0)
+
+        while last_minute + timedelta(minutes=1) < current_minute:
+            last_minute += timedelta(minutes=1)
+            last_close = self.ohlc_builder.ohlc["close"]
+
+            dummy = {
+                "time": last_minute,
+                "open": last_close,
+                "high": last_close,
+                "low": last_close,
+                "close": last_close
+            }
+
+            self.ohlc_writer.write_row(dummy)
+            # current_minuteも更新（念のため）
+            self.ohlc_builder.current_minute = last_minute
+            self.ohlc_builder.ohlc = dummy
