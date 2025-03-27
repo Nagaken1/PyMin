@@ -1,0 +1,6 @@
+[2025/03/27 12:14:44] [DEBUG] 銘柄コード取得成功: 160060019
+[2025/03/27 12:14:44] [OK] 銘柄登録成功: {'RegistList': [{'Symbol': '160060019', 'Exchange': 23}]}
+[2025/03/27 12:14:44] [INFO] 午前6:05になったため、自動終了します。
+[2025/03/27 12:14:44] [INFO] WebSocket 接続成功
+[2025/03/27 12:14:44] [ERROR] WebSocket エラー: 'NoneType' object has no attribute 'sock'
+[2025/03/27 12:14:44] [INFO] WebSocket 切断

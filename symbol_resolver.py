@@ -1,25 +1,60 @@
 import requests
 from config.settings import API_BASE_URL, FUTURE_CODE
+from datetime import datetime, timedelta, time as dtime
 
 # 銘柄コードキャッシュ
 _symbol_cache = {}
 
+def get_active_term(now: datetime) -> int:
+    """
+    現在時刻に基づいて、有効な限月（YYYYMM形式）を返す。
+    仕様：
+    - 通常：3の倍数月に切り上げた期近
+    - 第2金曜以降：期近を+3ヶ月に交代
+    - 第2木曜の 8:45〜15:45：期先（期近+3ヶ月）を返す
+    """
 
-def get_active_term(now) -> int:
-    """
-    現在の日付から、最も近い限月（YYYYMM）を返す。
-    限月は3・6・9・12月（3の倍数）に切り上げ。
-    """
     year = now.year
     month = now.month
 
-    # 3の倍数の月へ切り上げ（3, 6, 9, 12）
+    # --- 3の倍数月に切り上げ（期近） ---
     future_month = ((month - 1) // 3 + 1) * 3
     if future_month > 12:
         future_month -= 12
         year += 1
 
-    return year * 100 + future_month
+    base_term_year = year
+    base_term_month = future_month
+
+    # --- 該当月の第2金曜と第2木曜を計算 ---
+    if future_month in [3, 6, 9, 12]:
+        first_day = datetime(base_term_year, base_term_month, 1)
+        weekday = first_day.weekday()  # 月曜=0, 金曜=4
+
+        days_to_second_friday = ((4 - weekday) % 7) + 7
+        second_friday = first_day + timedelta(days=days_to_second_friday)
+        second_thursday = second_friday - timedelta(days=1)
+
+        # 日時ベースの比較のため date() を分離
+        now_date = now.date()
+        now_time = now.time()
+
+        # SQの金曜以降 → +3ヶ月（期近交代）
+        if now_date >= second_friday.date():
+            base_term_month += 3
+            if base_term_month > 12:
+                base_term_month -= 12
+                base_term_year += 1
+
+        # 第2木曜かつ 8:45〜15:45 の間 → 期先（+6ヶ月）
+        elif now_date == second_thursday.date():
+            if dtime(8, 45) <= now_time <= dtime(15, 45):
+                base_term_month += 6
+                if base_term_month > 12:
+                    base_term_month -= 12
+                    base_term_year += 1
+
+    return base_term_year * 100 + base_term_month
 
 
 def get_symbol_code(term: int, token: str) -> str:

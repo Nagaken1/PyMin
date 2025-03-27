@@ -42,7 +42,7 @@ class TickWriter:
             self._init_writer(timestamp)
 
         row = [
-            timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            timestamp.strftime("%Y/%m/%d %H:%M:%S"),
             price
         ]
         self.writer.writerow(row)

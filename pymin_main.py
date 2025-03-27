@@ -91,7 +91,7 @@ def main():
     try:
         while True:
             now = datetime.now().time()
-            if now >= dtime(6, 5):
+            if now == dtime(6, 5):
                 print("[INFO] 午前6:05になったため、自動終了します。")
                 break
             time.sleep(1)
