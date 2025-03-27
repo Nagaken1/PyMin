@@ -4,3 +4,4 @@
 [2025/03/27 12:14:44] [INFO] WebSocket 接続成功
 [2025/03/27 12:14:44] [ERROR] WebSocket エラー: 'NoneType' object has no attribute 'sock'
 [2025/03/27 12:14:44] [INFO] WebSocket 切断
+[2025/03/27 15:51:23] [INFO] 市場が閉まっています。終了します。
