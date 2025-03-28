@@ -97,6 +97,7 @@ def register_symbol(symbol_code: str, exchange_code: int, token: str) -> bool:
 
 
 def main():
+    now = datetime.now().replace(tzinfo=None)
     # カレントディレクトリ変更（スクリプトのある場所を基準に）
     base_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(base_dir)
