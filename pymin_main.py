@@ -8,7 +8,7 @@ from datetime import timedelta
 import pandas as pd
 
 from config.logger import setup_logger
-from config.settings import API_BASE_URL, FUTURE_CODE, get_api_password
+from config.settings import API_BASE_URL, get_api_password
 from config.settings import ENABLE_TICK_OUTPUT
 
 from client.kabu_websocket import KabuWebSocketClient
@@ -144,7 +144,7 @@ def main():
             if now.second == 0 and now.minute != last_export_minute:
                 export_latest_minutes_from_files(
                     base_dir="csv",
-                    minutes=30,
+                    minutes=3,
                     output_file="latest_ohlc.csv"
                 )
                 last_export_minute = now.minute
