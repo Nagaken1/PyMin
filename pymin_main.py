@@ -18,7 +18,7 @@ from writer.tick_writer import TickWriter
 from utils.time_util import is_market_closed, get_exchange_code
 from symbol_resolver import get_active_term, get_symbol_code
 
-def export_latest_minutes_from_files(base_dir: str, minutes: int = 30, output_file: str = "latest_ohlc.csv"):
+def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_file: str = "latest_ohlc.csv"):
     """
     ディレクトリ内のCSVファイルから、最新2つを読み込み、N分間のデータを抽出して出力。
     """
