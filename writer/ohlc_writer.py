@@ -1,47 +1,49 @@
 import os
 import csv
 from datetime import datetime
+from utils.time_util import get_trade_date
 
 
 class OHLCWriter:
     """
-    OHLCを日付ごとのCSVファイルに保存するクラス。
-    ファイルは自動で切り替わり、1行ずつ追記される。
+    OHLCを取引日ごとのCSVファイルに保存するクラス。
+    取引日は「6:00起点」で判定される。
     """
 
     def __init__(self, output_dir="csv"):
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
-        self.current_date = None
+        self.current_trade_date = None
         self.file = None
         self.writer = None
 
-    def _open_new_file(self, date: datetime):
+    def _open_new_file(self, trade_date: datetime.date):
         """
-        新しい日付のファイルを開く
+        指定された取引日のファイルを開く
         """
         if self.file:
             self.file.close()
 
-        self.current_date = date
-        date_str = date.strftime("%Y%m%d")
-        filename = os.path.join(self.output_dir, f"{date_str}_nikkei_mini_future.csv")
+        self.current_trade_date = trade_date
+        filename = os.path.join(
+            self.output_dir,
+            f"{trade_date.strftime('%Y%m%d')}_nikkei_mini_future.csv"
+        )
         self.file = open(filename, "a", newline="", encoding="utf-8")
         self.writer = csv.writer(self.file)
 
-        # ファイルが空ならヘッダーを書く
         if os.stat(filename).st_size == 0:
             self.writer.writerow(["Time", "Open", "High", "Low", "Close"])
 
     def write_row(self, ohlc: dict):
         """
-        OHLCデータをCSVに1行書き込む
+        OHLCを1行書き込む（取引日を見てファイル分割）
         """
         time: datetime = ohlc["time"]
-        date_only = time.date()
+        trade_date = get_trade_date(time)
 
-        if self.current_date is None or self.current_date.date() != date_only:
-            self._open_new_file(time)
+        if self.current_trade_date != trade_date:
+            self._open_new_file(trade_date)
 
         self.writer.writerow([
             time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -53,9 +55,6 @@ class OHLCWriter:
         self.file.flush()
 
     def close(self):
-        """
-        ファイルを閉じる
-        """
         if self.file:
             self.file.close()
             self.file = None

@@ -1,4 +1,4 @@
-from datetime import datetime, time as dtime
+from datetime import datetime, time as dtime, timedelta
 
 
 def is_market_closed(now: datetime) -> bool:
@@ -31,3 +31,12 @@ def is_closing_end(ts: datetime) -> bool:
     """
     t = ts.time()
     return t == dtime(15, 59) or t == dtime(5, 59)
+
+
+def get_trade_date(now: datetime) -> datetime.date:
+    """
+    取引日（6:00起点）を返す。
+    - 6:00以降：当日
+    - 6:00未満：前日を取引日とする
+    """
+    return (now - timedelta(days=1)).date() if now.time() < dtime(6, 0) else now.date()
