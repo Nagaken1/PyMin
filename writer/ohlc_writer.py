@@ -7,7 +7,6 @@ from utils.time_util import get_trade_date
 class OHLCWriter:
     """
     OHLCを取引日ごとのCSVファイルに保存するクラス。
-    取引日は「6:00起点」で判定される。
     """
 
     def __init__(self, output_dir="csv"):
