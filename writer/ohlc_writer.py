@@ -46,7 +46,7 @@ class OHLCWriter:
             self._open_new_file(trade_date)
 
         self.writer.writerow([
-            time.strftime("%Y-%m-%d %H:%M:%S"),
+            time.strftime("%Y/%m/%d %H:%M:%S"),
             ohlc["open"],
             ohlc["high"],
             ohlc["low"],
