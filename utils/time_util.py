@@ -4,11 +4,11 @@ from datetime import datetime, time as dtime, timedelta
 def is_market_closed(now: datetime) -> bool:
     """
     市場が一時的に閉じている時間帯かどうかを判定。
-    - 日中 → 15:46〜16:58
-    - 夜間 → 06:01〜08:43
+    - 日中 → 15:46〜16:59
+    - 夜間 → 06:01〜08:44
     """
     t = now.time()
-    return dtime(15, 46) <= t <= dtime(16, 58) or dtime(6, 1) <= t <= dtime(8, 43)
+    return dtime(15, 46) <= t <= dtime(16, 59) or dtime(6, 1) <= t <= dtime(8, 44)
 
 
 def get_exchange_code(now: datetime) -> int:

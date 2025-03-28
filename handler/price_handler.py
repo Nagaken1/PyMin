@@ -2,11 +2,10 @@ from datetime import datetime, timedelta
 from writer.ohlc_writer import OHLCWriter
 from writer.tick_writer import TickWriter
 from ohlc_builder import OHLCBuilder
-from utils.time_util import is_closing_end
+from utils.time_util import is_closing_end, is_market_closed
 
 
 class PriceHandler:
-
     """
     ティックを受信してOHLCを生成し、
     ファイルへの出力を管理するクラス。
@@ -43,6 +42,9 @@ class PriceHandler:
                 self.last_written_minute = dummy_time
 
     def fill_missing_minutes(self, now: datetime):
+        if is_market_closed(now):
+            return  # 市場休止中は何もしない
+
         if self.ohlc_builder.current_minute is None or self.ohlc_builder.ohlc is None:
             return
 

@@ -104,11 +104,6 @@ def main():
     # ログ設定
     setup_logger()
 
-    now = datetime.now()
-    if is_market_closed(now):
-        print("[INFO] 市場が閉まっています。終了します。")
-        return
-
     token = get_token()
     if not token:
         return
