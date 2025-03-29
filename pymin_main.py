@@ -6,6 +6,7 @@ import requests
 from datetime import datetime, time as dtime
 from datetime import timedelta
 import pandas as pd
+import csv
 
 from config.logger import setup_logger
 from config.settings import API_BASE_URL, get_api_password
@@ -17,6 +18,7 @@ from writer.ohlc_writer import OHLCWriter
 from writer.tick_writer import TickWriter
 from utils.time_util import get_exchange_code, get_trade_date, is_night_session
 from symbol_resolver import get_active_term, get_symbol_code
+
 
 def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_file: str = "latest_ohlc.csv"):
     """
@@ -121,7 +123,7 @@ def main():
 
     # 初期化
     ohlc_writer = OHLCWriter()
-    tick_writer = TickWriter() if ENABLE_TICK_OUTPUT else None
+    tick_writer = TickWriter(enable_output=ENABLE_TICK_OUTPUT)
     price_handler = PriceHandler(ohlc_writer, tick_writer)
 
     last_export_minute = None
