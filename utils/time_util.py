@@ -33,8 +33,12 @@ def is_closing_end(ts: datetime) -> bool:
 
 def get_trade_date(now: datetime) -> datetime.date:
     """
-    日経225miniなどの先物取引日（17:00起点）を返す。
-    - 17:00以降：翌営業日扱い
-    - 17:00未満：当日
+    ナイトセッション起点（17:00）での取引日を返し、土日なら前営業日に補正する。
     """
-    return (now + timedelta(days=1)).date() if now.time() >= dtime(17, 0) else now.date()
+    trade_date = (now + timedelta(days=1)).date() if now.time() >= dtime(17, 0) else now.date()
+
+    # 土曜（5）、日曜（6）は前営業日に補正
+    while trade_date.weekday() >= 5:
+        trade_date -= timedelta(days=1)
+
+    return trade_date
