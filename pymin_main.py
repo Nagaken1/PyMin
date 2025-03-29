@@ -15,7 +15,7 @@ from client.kabu_websocket import KabuWebSocketClient
 from handler.price_handler import PriceHandler
 from writer.ohlc_writer import OHLCWriter
 from writer.tick_writer import TickWriter
-from utils.time_util import is_market_closed, get_exchange_code
+from utils.time_util import get_exchange_code, get_trade_date
 from symbol_resolver import get_active_term, get_symbol_code
 
 def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_file: str = "latest_ohlc.csv"):
@@ -124,6 +124,9 @@ def main():
     tick_writer = TickWriter() if ENABLE_TICK_OUTPUT else None
     price_handler = PriceHandler(ohlc_writer, tick_writer)
 
+    last_export_minute = None
+    trade_date = get_trade_date(datetime.now())
+    END_TIME = datetime.combine(trade_date, dtime(6, 5))
 
     # WebSocketクライアント起動
     ws_client = KabuWebSocketClient(price_handler)
@@ -145,8 +148,8 @@ def main():
                 )
                 last_export_minute = now.minute
 
-            if now == dtime(6, 5):
-                print("[INFO] 午前6:05になったため、自動終了します。")
+            if now >= END_TIME:
+                print("[INFO] 取引終了時刻になったため、自動終了します。")
                 break
 
             time.sleep(1)
@@ -161,4 +164,5 @@ def main():
         ws_client.stop()
 
 if __name__ == "__main__":
+
     main()

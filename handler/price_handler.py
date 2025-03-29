@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta
+
 from writer.ohlc_writer import OHLCWriter
 from writer.tick_writer import TickWriter
 from ohlc_builder import OHLCBuilder
-from utils.time_util import is_closing_end, is_market_closed
-
+from utils.time_util import is_closing_end, is_market_closed, get_trade_date
+from datetime import datetime, timedelta, time as dtime
 
 class PriceHandler:
     """
@@ -30,16 +30,18 @@ class PriceHandler:
         ohlc = self.ohlc_builder.update(price, timestamp)
         if ohlc:
             ohlc_time = ohlc["time"].replace(second=0, microsecond=0)
-            if ohlc_time != self.last_written_minute:
+            if not self.last_written_minute or ohlc_time > self.last_written_minute:
                 self.ohlc_writer.write_row(ohlc)
                 self.last_written_minute = ohlc_time
+                self.ohlc_builder.current_minute = ohlc_time  # B: 整合性を保つために current_minute を更新
 
         dummy_ohlc = self.ohlc_builder.finalize_with_next_session_price(timestamp)
         if dummy_ohlc:
             dummy_time = dummy_ohlc["time"].replace(second=0, microsecond=0)
-            if dummy_time != self.last_written_minute:
+            if not self.last_written_minute or dummy_time > self.last_written_minute:
                 self.ohlc_writer.write_row(dummy_ohlc)
                 self.last_written_minute = dummy_time
+                self.ohlc_builder.current_minute = dummy_time
 
     def fill_missing_minutes(self, now: datetime):
         if is_market_closed(now):
@@ -63,20 +65,25 @@ class PriceHandler:
                 "close": last_close
             }
 
-            if dummy["time"].replace(second=0, microsecond=0) != self.last_written_minute:
+            dummy_time = dummy["time"].replace(second=0, microsecond=0)
+            if not self.last_written_minute or dummy_time > self.last_written_minute:
                 self.ohlc_writer.write_row(dummy)
-                self.last_written_minute = dummy["time"].replace(second=0, microsecond=0)
-
-            self.ohlc_builder.current_minute = last_minute
-            self.ohlc_builder.ohlc = dummy
+                self.last_written_minute = dummy_time
+                self.ohlc_builder.current_minute = dummy_time  # A: current_minute を進めて順序を保証
+                self.ohlc_builder.ohlc = dummy
+            else:
+                break  # A: 順序・重複チェックのため break で終了
 
     def finalize_ohlc(self):
         final = self.ohlc_builder._finalize_ohlc()
         if final:
             final_time = final["time"].replace(second=0, microsecond=0)
-            if final_time != self.last_written_minute:
+            if not self.last_written_minute or final_time > self.last_written_minute:
                 self.ohlc_writer.write_row(final)
                 self.last_written_minute = final_time
 
         if self.tick_writer:
             self.tick_writer.close()
+    # main関数内の終了判定で使用する絶対時刻
+    trade_date = get_trade_date(datetime.now())
+    END_TIME = datetime.combine(trade_date, dtime(6, 5))
