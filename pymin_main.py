@@ -128,7 +128,7 @@ def main():
     trade_date = get_trade_date(datetime.now())
     END_TIME = datetime.combine(trade_date, dtime(6, 5)) if is_night_session(now) else None
 
-    if datetime.now().replace(tzinfo=None) >= END_TIME:
+    if END_TIME and datetime.now().replace(tzinfo=None) >= END_TIME:
         print("[INFO] すでに取引終了時刻を過ぎているため、起動せず終了します。")
         return
 
@@ -141,9 +141,8 @@ def main():
     try:
         while True:
             now = datetime.now().replace(tzinfo=None)
-            price_handler.fill_missing_minutes(now)
 
-            if END_TIME and now >= END_TIME:
+            if END_TIME and datetime.now().replace(tzinfo=None) >= END_TIME:
                 print("[INFO] 取引終了時刻になったため、自動終了します。")
                 break
 

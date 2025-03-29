@@ -2,7 +2,7 @@
 from writer.ohlc_writer import OHLCWriter
 from writer.tick_writer import TickWriter
 from ohlc_builder import OHLCBuilder
-from utils.time_util import is_closing_end, is_market_closed, get_trade_date
+from utils.time_util import is_closing_end, is_market_closed
 from datetime import datetime, timedelta, time as dtime
 
 class PriceHandler:
@@ -17,6 +17,9 @@ class PriceHandler:
         self.last_written_minute = None
 
     def handle_tick(self, price: float, timestamp: datetime):
+        # Tickを処理する前に欠損分の補完を行う
+        self.fill_missing_minutes(timestamp)
+
         if self.tick_writer is not None:
             self.tick_writer.write_tick(price, timestamp)
 
@@ -84,6 +87,3 @@ class PriceHandler:
 
         if self.tick_writer:
             self.tick_writer.close()
-    # main関数内の終了判定で使用する絶対時刻
-    trade_date = get_trade_date(datetime.now())
-    END_TIME = datetime.combine(trade_date, dtime(6, 5))
