@@ -17,8 +17,6 @@ class PriceHandler:
         self.last_written_minute = None
 
     def handle_tick(self, price: float, timestamp: datetime):
-        # Tickを処理する前に欠損分の補完を行う
-        self.fill_missing_minutes(timestamp)
 
         if self.tick_writer is not None:
             self.tick_writer.write_tick(price, timestamp)
