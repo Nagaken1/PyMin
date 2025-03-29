@@ -42,3 +42,11 @@ def get_trade_date(now: datetime) -> datetime.date:
         trade_date -= timedelta(days=1)
 
     return trade_date
+
+def is_night_session(now: datetime) -> bool:
+    """
+    現在の時刻が夜間セッション中かを判定。
+    17:00〜翌6:00未満を夜間セッションとみなす。
+    """
+    t = now.time()
+    return t >= dtime(17, 0) or t < dtime(6, 0)

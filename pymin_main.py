@@ -15,7 +15,7 @@ from client.kabu_websocket import KabuWebSocketClient
 from handler.price_handler import PriceHandler
 from writer.ohlc_writer import OHLCWriter
 from writer.tick_writer import TickWriter
-from utils.time_util import get_exchange_code, get_trade_date
+from utils.time_util import get_exchange_code, get_trade_date, is_night_session
 from symbol_resolver import get_active_term, get_symbol_code
 
 def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_file: str = "latest_ohlc.csv"):
@@ -126,7 +126,7 @@ def main():
 
     last_export_minute = None
     trade_date = get_trade_date(datetime.now())
-    END_TIME = datetime.combine(trade_date, dtime(6, 5))
+    END_TIME = datetime.combine(trade_date, dtime(6, 5)) if is_night_session(now) else None
 
     if datetime.now().replace(tzinfo=None) >= END_TIME:
         print("[INFO] すでに取引終了時刻を過ぎているため、起動せず終了します。")
@@ -143,7 +143,7 @@ def main():
             now = datetime.now().replace(tzinfo=None)
             price_handler.fill_missing_minutes(now)
 
-            if now >= END_TIME:
+            if END_TIME and now >= END_TIME:
                 print("[INFO] 取引終了時刻になったため、自動終了します。")
                 break
 
