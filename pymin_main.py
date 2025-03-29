@@ -128,6 +128,10 @@ def main():
     trade_date = get_trade_date(datetime.now())
     END_TIME = datetime.combine(trade_date, dtime(6, 5))
 
+    if datetime.now().replace(tzinfo=None) >= END_TIME:
+        print("[INFO] すでに取引終了時刻を過ぎているため、起動せず終了します。")
+        return
+
     # WebSocketクライアント起動
     ws_client = KabuWebSocketClient(price_handler)
     ws_client.start()
@@ -139,6 +143,10 @@ def main():
             now = datetime.now().replace(tzinfo=None)
             price_handler.fill_missing_minutes(now)
 
+            if now >= END_TIME:
+                print("[INFO] 取引終了時刻になったため、自動終了します。")
+                break
+
             # 1分おきの書き出し処理
             if now.second == 0 and now.minute != last_export_minute:
                 export_latest_minutes_from_files(
@@ -147,10 +155,6 @@ def main():
                     output_file="latest_ohlc.csv"
                 )
                 last_export_minute = now.minute
-
-            if now >= END_TIME:
-                print("[INFO] 取引終了時刻になったため、自動終了します。")
-                break
 
             time.sleep(1)
 
