@@ -28,13 +28,10 @@ class TickWriter:
             if os.stat(self.file_path).st_size == 0:
                 self.writer.writerow(["Time", "Price"])
 
-        #  first_tick 出力ファイルの初期化（常に記録）
-        self.first_file = None
-        self.first_writer = None
-        self.first_file_path = os.path.join("tick", f"{self.current_date.strftime('%Y%m%d')}_first_tick.csv")
+        #  first_tick 出力ファイルは常に最新1行を保持（固定名ファイル）
+        self.first_file_path = os.path.join("tick", "latest_first_tick.csv")
         os.makedirs("tick", exist_ok=True)
-        self.first_file = open(self.first_file_path, "a", newline="", encoding="utf-8")
-        self.first_writer = csv.writer(self.first_file)
+        self.last_written_minute = None  # 1分ごとの重複記録防止用
 
         if os.stat(self.first_file_path).st_size == 0:
             self.first_writer.writerow(["Time", "Price"])
@@ -72,11 +69,13 @@ class TickWriter:
         # 書き込む内容を準備
         row = [timestamp.strftime("%Y/%m/%d %H:%M:%S"), price]
 
-        #  first_tick は常に記録（1分ごとに1回だけ）
+        #  first_tick は常に最新1件を上書き（1分ごとに1回だけ）
         tick_minute = timestamp.replace(second=0, microsecond=0)
         if self.last_written_minute != tick_minute:
-            self.first_writer.writerow(row)
-            self.first_file.flush()
+            with open(self.first_file_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["Time", "Price"])
+                writer.writerow(row)
             self.last_written_minute = tick_minute
 
         # 通常のTick出力（有効時のみ）
@@ -90,5 +89,3 @@ class TickWriter:
         """
         if self.file:
             self.file.close()
-        if self.first_file:
-            self.first_file.close()
