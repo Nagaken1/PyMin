@@ -97,6 +97,18 @@ def register_symbol(symbol_code: str, exchange_code: int, token: str) -> bool:
         print(f"[ERROR] 銘柄登録失敗: {e}")
         return False
 
+def export_connection_info(symbol_code: str, exchange_code: int, token: str, output_file: str = "connection_info.csv"):
+    """
+    symbol_code, exchange_code, token をCSVファイルに1行で出力する。
+    """
+    try:
+        with open(output_file, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["SymbolCode", "ExchangeCode", "Token"])
+            writer.writerow([symbol_code, exchange_code, token])
+        print(f"[INFO] 接続情報を {output_file} に書き出しました。")
+    except Exception as e:
+        print(f"[ERROR] 接続情報の書き出しに失敗しました: {e}")
 
 def main():
     now = datetime.now().replace(tzinfo=None)
@@ -120,6 +132,9 @@ def main():
     exchange_code = get_exchange_code(now)
     if not register_symbol(symbol_code, exchange_code, token):
         return
+
+    # 接続情報を出力
+    export_connection_info(symbol_code, exchange_code, token)
 
     # 初期化
     ohlc_writer = OHLCWriter()
