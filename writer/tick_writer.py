@@ -30,7 +30,7 @@ class TickWriter:
                 self.writer.writerow(["Time", "Price"])
 
         #  first_tick 出力ファイルは常に最新1行を保持（固定名ファイル）
-        self.first_file_path = os.path.join("tick", "latest_first_tick.csv")
+        self.first_file_path =  "latest_first_tick.csv"
         os.makedirs("tick", exist_ok=True)
         self.last_written_minute = None  # 1分ごとの重複記録防止用
 
