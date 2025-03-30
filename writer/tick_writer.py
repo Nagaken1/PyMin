@@ -36,7 +36,11 @@ class TickWriter:
         if os.stat(self.first_file_path).st_size == 0:
             self.first_writer.writerow(["Time", "Price"])
 
-        self.last_written_minute = None  # 1分ごとの重複記録防止用
+        # 初回オープンでヘッダーが必要なら書く（tell()で確認）
+        self.first_file = open(self.first_file_path, "a", newline="", encoding="utf-8")
+        self.first_writer = csv.writer(self.first_file)
+        if self.first_file.tell() == 0:
+            self.first_writer.writerow(["Time", "Price"])
 
     def write_tick(self, price, timestamp: datetime):
         """
@@ -89,3 +93,5 @@ class TickWriter:
         """
         if self.file:
             self.file.close()
+        if self.first_file:
+            self.first_file.close()
