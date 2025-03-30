@@ -13,7 +13,7 @@ class OHLCBuilder:
         self.first_price_of_next_session = None
         self.closing_completed_session = None  # ← セッション単位で記録
 
-    def update(self, price: float, timestamp: datetime) -> dict:
+    def update(self, price: float, timestamp: datetime, contract_month=None) -> dict:
         """
         ティックを受信してOHLCを更新。新しい1分が始まったら前のOHLCを返す。
         """
@@ -26,7 +26,9 @@ class OHLCBuilder:
                 "open": price,
                 "high": price,
                 "low": price,
-                "close": price
+                "close": price,
+                "is_dummy": False,
+                "contract_month": contract_month
             }
             return None
 
@@ -43,7 +45,9 @@ class OHLCBuilder:
             "open": price,
             "high": price,
             "low": price,
-            "close": price
+            "close": price,
+            "is_dummy": False,
+            "contract_month": contract_month
         }
         return completed
 
@@ -67,7 +71,9 @@ class OHLCBuilder:
             "open": self.first_price_of_next_session,
             "high": self.first_price_of_next_session,
             "low": self.first_price_of_next_session,
-            "close": self.first_price_of_next_session
+            "close": self.first_price_of_next_session,
+            "is_dummy": True,
+            "contract_month": "dummy"
         }
 
         self.first_price_of_next_session = None

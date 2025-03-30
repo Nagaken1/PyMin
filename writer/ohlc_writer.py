@@ -32,7 +32,8 @@ class OHLCWriter:
         self.writer = csv.writer(self.file)
 
         if os.stat(filename).st_size == 0:
-            self.writer.writerow(["Time", "Open", "High", "Low", "Close"])
+            self.writer.writerow(["Time", "Open", "High", "Low", "Close", "Dummy", "ContractMonth"])
+
 
     def write_row(self, ohlc: dict):
         """
@@ -44,12 +45,22 @@ class OHLCWriter:
         if self.current_trade_date != trade_date:
             self._open_new_file(trade_date)
 
+        # Dummy フラグ（dummy または real）
+        dummy_flag = "dummy" if ohlc.get("is_dummy") else "real"
+
+        # 限月（ダミーの場合は dummy）
+        contract_month = ohlc.get("contract_month", "")
+        if dummy_flag == "dummy":
+            contract_month = "dummy"
+
         self.writer.writerow([
             time.strftime("%Y/%m/%d %H:%M:%S"),
             ohlc["open"],
             ohlc["high"],
             ohlc["low"],
-            ohlc["close"]
+            ohlc["close"],
+            dummy_flag,
+            contract_month
         ])
         self.file.flush()
 

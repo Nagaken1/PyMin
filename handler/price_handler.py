@@ -4,6 +4,7 @@ from writer.tick_writer import TickWriter
 from ohlc_builder import OHLCBuilder
 from utils.time_util import is_closing_end, is_market_closed
 from datetime import datetime, timedelta, time as dtime
+from symbol_resolver import get_active_term
 
 class PriceHandler:
     """
@@ -28,9 +29,15 @@ class PriceHandler:
         ):
             self.ohlc_builder.first_price_of_next_session = price
 
+            contract_month = get_active_term(timestamp)  # ← 限月を取得
+
         ohlc = self.ohlc_builder.update(price, timestamp)
         if ohlc:
             ohlc_time = ohlc["time"].replace(second=0, microsecond=0)
+
+            ohlc["is_dummy"] = False  # 明示的に dummy でないことを付与
+            ohlc["contract_month"] = contract_month
+
             if not self.last_written_minute or ohlc_time > self.last_written_minute:
                 self.ohlc_writer.write_row(ohlc)
                 self.last_written_minute = ohlc_time
@@ -63,7 +70,9 @@ class PriceHandler:
                 "open": last_close,
                 "high": last_close,
                 "low": last_close,
-                "close": last_close
+                "close": last_close,
+                "is_dummy": True,
+                "contract_month": "dummy"
             }
 
             dummy_time = dummy["time"].replace(second=0, microsecond=0)
