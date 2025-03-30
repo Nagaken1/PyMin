@@ -25,16 +25,14 @@ class TickWriter:
             self.file = open(self.file_path, "a", newline="", encoding="utf-8")
             self.writer = csv.writer(self.file)
 
-            if os.stat(self.file_path).st_size == 0:
+            # ファイルが空ならヘッダーを書き込む
+            if self.file.tell() == 0:
                 self.writer.writerow(["Time", "Price"])
 
         #  first_tick 出力ファイルは常に最新1行を保持（固定名ファイル）
         self.first_file_path = os.path.join("tick", "latest_first_tick.csv")
         os.makedirs("tick", exist_ok=True)
         self.last_written_minute = None  # 1分ごとの重複記録防止用
-
-        if os.stat(self.first_file_path).st_size == 0:
-            self.first_writer.writerow(["Time", "Price"])
 
         # 初回オープンでヘッダーが必要なら書く（tell()で確認）
         self.first_file = open(self.first_file_path, "a", newline="", encoding="utf-8")
@@ -45,9 +43,10 @@ class TickWriter:
     def write_tick(self, price, timestamp: datetime):
         """
         TickデータをCSVファイルに追記する。日付が変わった場合は新しいファイルに切り替える。
+        また、first_tickは常に最新1件を上書きで保存する。
         """
 
-        # 日付が変わったらファイルを切り替える
+        # 日付が変わったら通常ファイルのみ切り替える
         if timestamp.date() != self.current_date:
             if self.enable_output and self.file:
                 self.file.close()
@@ -56,19 +55,20 @@ class TickWriter:
                 self.file_path = os.path.join(tick_dir, f"{date_str}_tick.csv")
                 self.file = open(self.file_path, "a", newline="", encoding="utf-8")
                 self.writer = csv.writer(self.file)
-                if os.stat(self.file_path).st_size == 0:
+                if self.file.tell() == 0:
                     self.writer.writerow(["Time", "Price"])
 
+            # first_tick ファイルの初期化（上書きではなく append）
             if self.first_file:
                 self.first_file.close()
-            self.first_file_path = os.path.join("tick", f"{timestamp.strftime('%Y%m%d')}_first_tick.csv")
+            self.first_file_path = os.path.join("tick", "latest_first_tick.csv")
             self.first_file = open(self.first_file_path, "a", newline="", encoding="utf-8")
             self.first_writer = csv.writer(self.first_file)
-            if os.stat(self.first_file_path).st_size == 0:
+            if self.first_file.tell() == 0:
                 self.first_writer.writerow(["Time", "Price"])
 
             self.current_date = timestamp.date()
-            self.last_written_minute = None  # 日付変更時は最初のTick記録履歴をリセット
+            self.last_written_minute = None  # 日付変更時にリセット
 
         # 書き込む内容を準備
         row = [timestamp.strftime("%Y/%m/%d %H:%M:%S"), price]
