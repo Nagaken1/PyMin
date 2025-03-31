@@ -62,8 +62,12 @@ class PriceHandler:
         last_minute = self.ohlc_builder.current_minute
         current_minute = now.replace(second=0, microsecond=0, tzinfo=None)
 
-        #  最初の1分（Tick直後の補完）をスキップ
-        if current_minute <= last_minute + timedelta(minutes=1):
+        # 補完処理で「直近の current_minute の1分後」を補完しないように明示的に制限
+        if current_minute <= last_minute:
+            return  # 同じ分内なら補完不要
+
+        # まだ1分未満しか経っていない場合は補完しない（← NEW）
+        if current_minute == last_minute + timedelta(minutes=1):
             return
 
         while last_minute + timedelta(minutes=1) < current_minute:
