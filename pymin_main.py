@@ -140,8 +140,8 @@ def main():
     ohlc_writer = OHLCWriter()
     tick_writer = TickWriter(enable_output=ENABLE_TICK_OUTPUT)
     price_handler = PriceHandler(ohlc_writer, tick_writer)
-
     last_export_minute = None
+
     trade_date = get_trade_date(datetime.now())
     END_TIME = datetime.combine(trade_date, dtime(6, 5)) if is_night_session(now) else None
 
@@ -152,8 +152,6 @@ def main():
     # WebSocketクライアント起動
     ws_client = KabuWebSocketClient(price_handler)
     ws_client.start()
-
-    last_export_minute = None
 
     try:
         while True:

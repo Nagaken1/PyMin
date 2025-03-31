@@ -44,13 +44,13 @@ class PriceHandler:
                 self.last_written_minute = ohlc_time
                 self.ohlc_builder.current_minute = ohlc_time  # B: 整合性を保つために current_minute を更新
 
-        dummy_ohlc = self.ohlc_builder.finalize_with_next_session_price(timestamp)
-        if dummy_ohlc:
-            dummy_time = dummy_ohlc["time"].replace(second=0, microsecond=0)
-            if not self.last_written_minute or dummy_time > self.last_written_minute:
-                self.ohlc_writer.write_row(dummy_ohlc)
-                self.last_written_minute = dummy_time
-                self.ohlc_builder.current_minute = dummy_time
+#        dummy_ohlc = self.ohlc_builder.finalize_with_next_session_price(timestamp)
+#        if dummy_ohlc:
+#            dummy_time = dummy_ohlc["time"].replace(second=0, microsecond=0)
+#            if not self.last_written_minute or dummy_time > self.last_written_minute:
+#                self.ohlc_writer.write_row(dummy_ohlc)
+#                self.last_written_minute = dummy_time
+#                self.ohlc_builder.current_minute = dummy_time
 
     def fill_missing_minutes(self, now: datetime):
         if is_market_closed(now):
