@@ -16,7 +16,7 @@ class PriceHandler:
         self.ohlc_writer = ohlc_writer
         self.tick_writer = tick_writer
         self.last_written_minute = None
-        self.first_ohlc_skipped = False
+        #self.first_ohlc_skipped = False
 
     def handle_tick(self, price: float, timestamp: datetime):
 
@@ -36,13 +36,24 @@ class PriceHandler:
         ohlc = self.ohlc_builder.update(price, timestamp, contract_month=contract_month)
         if ohlc:
             ohlc_time = ohlc["time"].replace(second=0, microsecond=0)
+            #print(f"[DEBUG] ohlc_time to write = {ohlc['time']}")
+
+            #  出力対象は「現在のティックより1分以上前のOHLCのみ」
+            current_tick_minute = timestamp.replace(second=0, microsecond=0, tzinfo=None)
+            if ohlc_time >= current_tick_minute:
+                # 未来または現在分 → まだ未確定なので書き込まない
+                return
 
             ohlc["is_dummy"] = False  # 明示的に dummy でないことを付与
             ohlc["contract_month"] = contract_month
 
             # 最初の1分間はスキップして書き出さない
-            if not self.first_ohlc_skipped:
-                self.first_ohlc_skipped = True
+            #if not self.first_ohlc_skipped:
+            #    self.first_ohlc_skipped = True
+            #    return
+
+            #  重複防止：直前と同じ分は絶対書き込まない
+            if self.last_written_minute and ohlc_time <= self.last_written_minute:
                 return
 
             if not self.last_written_minute or ohlc_time > self.last_written_minute:

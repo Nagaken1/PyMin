@@ -39,7 +39,10 @@ class OHLCBuilder:
             self.ohlc["close"] = price
             return None
 
-        completed = self.ohlc
+        completed = self.ohlc.copy()
+
+        #print(f"[DEBUG] completed['time'] = {completed['time']}, next_minute = {minute}")
+
         self.current_minute = minute
         self.ohlc = {
             "time": minute,
