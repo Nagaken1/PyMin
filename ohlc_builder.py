@@ -19,6 +19,7 @@ class OHLCBuilder:
         """
         minute = timestamp.replace(second=0, microsecond=0, tzinfo=None)
 
+        # 初回（current_minuteがまだない）
         if self.current_minute is None:
             self.current_minute = minute
             self.ohlc = {
@@ -31,12 +32,15 @@ class OHLCBuilder:
                 "contract_month": contract_month
             }
             self._started = True  # 状態フラグ（必要なら）
+            print(f"[DEBUG][update] 初回OHLC開始: {minute} → {self.ohlc}")
             return None
 
+        # 同じ1分内：高値・安値・終値を更新
         if minute == self.current_minute:
             self.ohlc["high"] = max(self.ohlc["high"], price)
             self.ohlc["low"] = min(self.ohlc["low"], price)
             self.ohlc["close"] = price
+            print(f"[DEBUG][update] 同じ分の更新: {minute} → High={self.ohlc['high']} Low={self.ohlc['low']} Close={price}")
             return None
 
         completed = self.ohlc.copy()
@@ -53,6 +57,7 @@ class OHLCBuilder:
             "is_dummy": False,
             "contract_month": contract_month
         }
+        print(f"[DEBUG][update] 新しい分開始: {minute}, 前の分完成: {completed['time']}")
         return completed
 
     def _finalize_ohlc(self) -> dict:
