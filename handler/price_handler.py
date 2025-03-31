@@ -16,6 +16,7 @@ class PriceHandler:
         self.ohlc_writer = ohlc_writer
         self.tick_writer = tick_writer
         self.last_written_minute = None
+        self.first_ohlc_skipped = False
 
     def handle_tick(self, price: float, timestamp: datetime):
 
@@ -38,6 +39,11 @@ class PriceHandler:
 
             ohlc["is_dummy"] = False  # 明示的に dummy でないことを付与
             ohlc["contract_month"] = contract_month
+
+            # 最初の1分間はスキップして書き出さない
+            if not self.first_ohlc_skipped:
+                self.first_ohlc_skipped = True
+                return
 
             if not self.last_written_minute or ohlc_time > self.last_written_minute:
                 self.ohlc_writer.write_row(ohlc)
