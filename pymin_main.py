@@ -162,7 +162,8 @@ def main():
                 break
 
             # 1分おきの書き出し処理
-            if now.second == 0 and now.minute != last_export_minute:
+            if now.second == 1 and now.minute != last_export_minute:
+                price_handler.fill_missing_minutes(now) #補完処理を呼び出し
 
                 export_latest_minutes_from_files(
                     base_dir="csv",
@@ -172,7 +173,7 @@ def main():
 
                 last_export_minute = now.minute
 
-                price_handler.fill_missing_minutes(now) #補完処理を呼び出し
+
 
             time.sleep(1)
 
