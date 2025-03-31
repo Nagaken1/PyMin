@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import datetime
+import atexit
 
 
 class DualLogger:
@@ -24,6 +25,7 @@ class DualLogger:
 
             self.terminal.write(full_line)
             self.log.write(full_line)
+            self.flush()
 
     def flush(self):
         if self.buffer:
@@ -50,3 +52,5 @@ def setup_logger():
 
     sys.stdout = DualLogger(log_path)
     sys.stderr = sys.stdout
+
+    atexit.register(sys.stdout.flush) # 終了時に flush を確実におこなう

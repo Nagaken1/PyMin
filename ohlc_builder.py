@@ -30,7 +30,7 @@ class OHLCBuilder:
                 "is_dummy": False,
                 "contract_month": contract_month
             }
-            return None
+            return self.ohlc
 
         if minute == self.current_minute:
             self.ohlc["high"] = max(self.ohlc["high"], price)
