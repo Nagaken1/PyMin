@@ -19,6 +19,9 @@ class PriceHandler:
 
     def handle_tick(self, price: float, timestamp: datetime):
 
+        # 限月をあらかじめ取得（常に必要なので）
+        contract_month = get_active_term(timestamp)
+
         if self.tick_writer is not None:
             self.tick_writer.write_tick(price, timestamp)
 
@@ -28,8 +31,6 @@ class PriceHandler:
             and self.ohlc_builder.closing_completed_session != self.ohlc_builder._get_session_id(timestamp)
         ):
             self.ohlc_builder.first_price_of_next_session = price
-
-            contract_month = get_active_term(timestamp)  # ← 限月を取得
 
         ohlc = self.ohlc_builder.update(price, timestamp)
         if ohlc:
