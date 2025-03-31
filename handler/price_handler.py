@@ -95,6 +95,10 @@ class PriceHandler:
 
         while last_minute + timedelta(minutes=1) < current_minute:
             last_minute += timedelta(minutes=1)
+            if is_market_closed(last_minute):
+                print(f"[DEBUG][fill_missing_minutes] 無音時間のため補完スキップ: {last_minute}")
+                continue  # ← 無音時間なら補完スキップ
+
             last_close = self.ohlc_builder.ohlc["close"]
 
             dummy = {
