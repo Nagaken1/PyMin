@@ -30,7 +30,8 @@ class OHLCBuilder:
                 "is_dummy": False,
                 "contract_month": contract_month
             }
-            return self.ohlc
+            self._started = True  # 状態フラグ（必要なら）
+            return None
 
         if minute == self.current_minute:
             self.ohlc["high"] = max(self.ohlc["high"], price)

@@ -32,7 +32,7 @@ class PriceHandler:
         ):
             self.ohlc_builder.first_price_of_next_session = price
 
-        ohlc = self.ohlc_builder.update(price, timestamp)
+        ohlc = self.ohlc_builder.update(price, timestamp, contract_month=contract_month)
         if ohlc:
             ohlc_time = ohlc["time"].replace(second=0, microsecond=0)
 
@@ -61,6 +61,10 @@ class PriceHandler:
 
         last_minute = self.ohlc_builder.current_minute
         current_minute = now.replace(second=0, microsecond=0, tzinfo=None)
+
+        #  最初の1分（Tick直後の補完）をスキップ
+        if current_minute <= last_minute + timedelta(minutes=1):
+            return
 
         while last_minute + timedelta(minutes=1) < current_minute:
             last_minute += timedelta(minutes=1)
