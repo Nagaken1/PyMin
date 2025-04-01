@@ -81,15 +81,15 @@ class PriceHandler:
         last_minute = self.ohlc_builder.current_minute
         current_minute = now.replace(second=0, microsecond=0, tzinfo=None)
 
+        print(f"[DEBUG] fill_missing_minutes() 呼び出し")
+        print(f"[DEBUG] last_ohlc.ohlc_time = {last_minute}")
+        print(f"[DEBUG] current_minute = {current_minute}")
+        print(f"[DEBUG] self.last_written_minute = {self.last_written_minute}")
+
         # 補完処理で「直近の current_minute の1分後」を補完しないように明示的に制限
         if current_minute <= last_minute:
             print(f"[DEBUG][fill_missing_minutes] 同分または過去分のため補完スキップ: now={now}, current={current_minute}")
             return  # 同じ分内なら補完不要
-
-        # まだ1分未満しか経っていない場合は補完しない（← NEW）
-        if current_minute == last_minute + timedelta(minutes=1):
-            print(f"[DEBUG][fill_missing_minutes] 1分差だけのため補完なし: now={now}, current={current_minute}")
-            return
 
         print(f"[DEBUG][fill_missing_minutes] 補完開始: from {last_minute + timedelta(minutes=1)} to {current_minute - timedelta(minutes=1)}")
 

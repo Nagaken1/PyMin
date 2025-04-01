@@ -40,7 +40,7 @@ class OHLCBuilder:
             self.ohlc["high"] = max(self.ohlc["high"], price)
             self.ohlc["low"] = min(self.ohlc["low"], price)
             self.ohlc["close"] = price
-            print(f"[DEBUG][update] 同じ分の更新: {minute} → High={self.ohlc['high']} Low={self.ohlc['low']} Close={price}")
+            #print(f"[DEBUG][update] 同じ分の更新: {minute} → High={self.ohlc['high']} Low={self.ohlc['low']} Close={price}")
             return None
 
         completed = self.ohlc.copy()

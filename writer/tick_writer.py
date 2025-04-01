@@ -16,6 +16,9 @@ class TickWriter:
         # Tick 出力ファイルの初期化
         self.file = None
         self.writer = None
+
+        self.first_file_path = "latest_first_tick.csv"  # ← PyMin直下に固定
+
         if self.enable_output:
             date_str = self.current_date.strftime("%Y%m%d")
             tick_dir = "tick"
@@ -57,15 +60,6 @@ class TickWriter:
                 self.writer = csv.writer(self.file)
                 if self.file.tell() == 0:
                     self.writer.writerow(["Time", "Price"])
-
-            # first_tick ファイルの初期化（上書きではなく append）
-            if self.first_file:
-                self.first_file.close()
-            self.first_file_path = os.path.join("tick", "latest_first_tick.csv")
-            self.first_file = open(self.first_file_path, "a", newline="", encoding="utf-8")
-            self.first_writer = csv.writer(self.first_file)
-            if self.first_file.tell() == 0:
-                self.first_writer.writerow(["Time", "Price"])
 
             self.current_date = timestamp.date()
             self.last_written_minute = None  # 日付変更時にリセット
