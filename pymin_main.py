@@ -220,7 +220,7 @@ def main():
                 prev_last_line = new_last_line  # ← ここで初めて更新
                 break
             else:
-                print(f"[INFO] 試行 {attempt+1}: 変化なし。")
+                print(f"変化なし。")
                 time.sleep(1)
 
     finally:
