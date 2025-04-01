@@ -63,6 +63,7 @@ class OHLCWriter:
             contract_month
         ])
         self.file.flush()
+        os.fsync(self.file.fileno())
 
     def close(self):
         if self.file:
