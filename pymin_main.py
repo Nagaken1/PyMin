@@ -195,6 +195,8 @@ def main():
     ws_client = KabuWebSocketClient(price_handler)
     ws_client.start()
 
+    last_checked_minute = -1
+
     try:
         while True:
             now = datetime.now().replace(tzinfo=None)
@@ -203,25 +205,24 @@ def main():
                 print("[INFO] 取引終了時刻になったため、自動終了します。")
                 break
 
-            # 1分おきのファイル更新監視（最終行の変化で検出）
-            if now.second == 1:
+            if now.minute != last_checked_minute and now.second == 1:
                 for attempt in range(5):
                     current_last_line = get_last_line_of_latest_source("csv")
                     if current_last_line != prev_last_line:
                         print("[INFO] ソースファイルが更新されたため、最新3分を書き出します。")
+                        new_last_line = export_latest_minutes_from_files(
+                            base_dir="csv",
+                            minutes=3,
+                            output_file="latest_ohlc.csv",
+                            prev_last_line=prev_last_line
+                        )
+                        prev_last_line = new_last_line
+                        break
+                    else:
+                        time.sleep(1)  # 最大5回リトライ
 
-                # 実際の書き出し処理を行い、その結果として新しい最終行を取得
-                new_last_line = export_latest_minutes_from_files(
-                    base_dir="csv",
-                    minutes=3,
-                    output_file="latest_ohlc.csv",
-                    prev_last_line=prev_last_line
-                )
-                prev_last_line = new_last_line  # ← ここで初めて更新
-                break
-            else:
-                print(f"変化なし。")
-                time.sleep(1)
+                last_checked_minute = now.minute  # 次の分まで再実行しない
+        time.sleep(1)
 
     finally:
         price_handler.finalize_ohlc()
