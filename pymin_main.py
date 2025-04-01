@@ -63,6 +63,35 @@ def wait_for_latest_file_update_by_last_line(file_path: str, timeout: int = 5) -
     print(f"[WARNING] ファイル {file_path} に最終行の変化が検出されませんでした。")
     return False
 
+def get_last_line(file_path: str) -> str:
+    """
+    ファイルの最終行を返す（空なら "" を返す）。
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            return lines[-1].strip() if lines else ""
+    except Exception as e:
+        print(f"[ERROR] 最終行取得に失敗: {e}")
+        return ""
+
+def wait_for_latest_line_change(prev_last_line: str, file_path: str, timeout: int = 5) -> tuple[bool, str]:
+    """
+    指定されたファイルの最終行が一定時間内に変更されたかを監視。
+    戻り値: (更新されたか: bool, 最新の最終行: str)
+    """
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
+        current_last_line = get_last_line(file_path)
+        if current_last_line != prev_last_line:
+            print(f"[INFO] ファイル {file_path} の最終行が変更されました。")
+            return True, current_last_line
+        time.sleep(0.5)
+
+    print(f"[WARNING] ファイル {file_path} に最終行の変化が検出されませんでした。")
+    return False, prev_last_line
+
 def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_file: str = "latest_ohlc.csv"):
     """
     ディレクトリ内のCSVファイルから、最新2つを読み込み、N分間のデータを抽出して出力。
@@ -82,7 +111,14 @@ def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_fil
 
         # 最新ファイルの更新完了を待つ
         latest_file_path = os.path.join(base_dir, target_files[0])
-        wait_for_latest_file_update_by_last_line(latest_file_path)
+
+        prev_last_line = get_last_line(latest_file_path)
+
+        updated, prev_last_line = wait_for_latest_line_change(prev_last_line, latest_file_path)
+        if updated:
+            print("[INFO] ファイルが更新されました")
+        else:
+            print("[INFO] 変化なし")
 
         combined_df = pd.DataFrame()
 
