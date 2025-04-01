@@ -20,16 +20,19 @@ from utils.time_util import get_exchange_code, get_trade_date, is_night_session
 from symbol_resolver import get_active_term, get_symbol_code
 
 def wait_for_latest_file_update(file_path: str, timeout: int = 5):
-    """ファイルの更新を一定時間（秒）待機する。変更が検出されたら True を返す。"""
+    """ファイルの更新を一定時間（秒）待機する。更新されたら True を返す。"""
     start_time = time.time()
     last_mtime = os.path.getmtime(file_path)
+    last_size = os.path.getsize(file_path)
 
     while time.time() - start_time < timeout:
         current_mtime = os.path.getmtime(file_path)
-        if current_mtime != last_mtime:
+        current_size = os.path.getsize(file_path)
+        if current_mtime != last_mtime or current_size != last_size:
             print(f"[INFO] ファイル {file_path} が更新されました。")
             return True
         time.sleep(0.5)
+
     print(f"[WARNING] ファイル {file_path} に更新が検出されませんでした。")
     return False
 
