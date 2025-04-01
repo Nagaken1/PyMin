@@ -19,50 +19,6 @@ from writer.tick_writer import TickWriter
 from utils.time_util import get_exchange_code, get_trade_date, is_night_session
 from symbol_resolver import get_active_term, get_symbol_code
 
-def wait_for_latest_file_update(file_path: str, timeout: int = 5):
-    """ファイルの更新を一定時間（秒）待機する。更新されたら True を返す。"""
-    start_time = time.time()
-    last_mtime = os.path.getmtime(file_path)
-    last_size = os.path.getsize(file_path)
-
-    while time.time() - start_time < timeout:
-        current_mtime = os.path.getmtime(file_path)
-        current_size = os.path.getsize(file_path)
-        if current_mtime != last_mtime or current_size != last_size:
-            print(f"[INFO] ファイル {file_path} が更新されました。")
-            return True
-        time.sleep(0.5)
-
-    print(f"[WARNING] ファイル {file_path} に更新が検出されませんでした。")
-    return False
-
-def wait_for_latest_file_update_by_last_line(file_path: str, timeout: int = 5) -> bool:
-    """
-    ファイルの最終行を監視し、一定時間内に変化があった場合に True を返す。
-    変化がなければ False。
-    """
-    def get_last_line(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-                return lines[-1].strip() if lines else ""
-        except Exception as e:
-            print(f"[ERROR] 最終行取得に失敗: {e}")
-            return ""
-
-    original_last_line = get_last_line(file_path)
-    start_time = time.time()
-
-    while time.time() - start_time < timeout:
-        current_last_line = get_last_line(file_path)
-        if current_last_line != original_last_line:
-            print(f"[INFO] ファイル {file_path} の最終行が変更されました。")
-            return True
-        time.sleep(0.5)
-
-    print(f"[WARNING] ファイル {file_path} に最終行の変化が検出されませんでした。")
-    return False
-
 def get_last_line(file_path: str) -> str:
     """
     ファイルの最終行を返す（空なら "" を返す）。
@@ -75,22 +31,6 @@ def get_last_line(file_path: str) -> str:
         print(f"[ERROR] 最終行取得に失敗: {e}")
         return ""
 
-def wait_for_latest_line_change(prev_last_line: str, file_path: str, timeout: int = 5) -> tuple[bool, str]:
-    """
-    指定されたファイルの最終行が一定時間内に変更されたかを監視。
-    戻り値: (更新されたか: bool, 最新の最終行: str)
-    """
-    start_time = time.time()
-
-    while time.time() - start_time < timeout:
-        current_last_line = get_last_line(file_path)
-        if current_last_line != prev_last_line:
-            print(f"[INFO] ファイル {file_path} の最終行が変更されました。")
-            return True, current_last_line
-        time.sleep(0.5)
-
-    print(f"[WARNING] ファイル {file_path} に最終行の変化が検出されませんでした。")
-    return False, prev_last_line
 
 def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_file: str = "latest_ohlc.csv", prev_last_line: str = "") -> str:
     """
@@ -265,21 +205,21 @@ def main():
 
             # 1分おきのファイル更新監視（最終行の変化で検出）
             if now.second == 1:
-                current_last_line = get_last_line_of_latest_source("csv")
-                if current_last_line != prev_last_line:
-                    print("[INFO] ソースファイルが更新されたため、最新3分を書き出します。")
-                    prev_last_line = current_last_line
-                    export_latest_minutes_from_files(
-                        base_dir="csv",
-                        minutes=3,
-                        output_file="latest_ohlc.csv",
-                        prev_last_line=prev_last_line  # ← オプションで渡すならそのまま
-                    )
-                    #last_export_minute = now.minute
-                else:
-                    print("[INFO] ソースに変化なし。")
-
-            time.sleep(1)
+                for attempt in range(5):
+                    current_last_line = get_last_line_of_latest_source("csv")
+                    if current_last_line != prev_last_line:
+                        print("[INFO] ソースファイルが更新されたため、最新3分を書き出します。")
+                        prev_last_line = current_last_line
+                        export_latest_minutes_from_files(
+                            base_dir="csv",
+                            minutes=3,
+                            output_file="latest_ohlc.csv",
+                            prev_last_line=prev_last_line
+                        )
+                        break
+                    else:
+                        print(f"[INFO] ソースに変化なし({attempt+1}/5)")
+                        time.sleep(1)
 
     finally:
         price_handler.finalize_ohlc()
