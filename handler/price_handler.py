@@ -93,7 +93,7 @@ class PriceHandler:
 
         print(f"[DEBUG][fill_missing_minutes] 補完開始: from {last_minute + timedelta(minutes=1)} to {current_minute - timedelta(minutes=1)}")
 
-        while last_minute + timedelta(minutes=1) < current_minute:
+        while last_minute + timedelta(minutes=1) <= current_minute:
             next_minute = last_minute + timedelta(minutes=1)
 
             if is_market_closed(next_minute):
