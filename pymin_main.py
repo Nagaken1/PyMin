@@ -70,6 +70,9 @@ def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_fil
         latest_df = combined_df[combined_df["Time"] >= start_time].copy()
         latest_df.sort_values("Time", inplace=True)
 
+        # ↓ 日付のフォーマットを統一（YYYY/MM/DD HH:MM:SS）
+        latest_df["Time"] = latest_df["Time"].dt.strftime("%Y/%m/%d %H:%M:%S")
+
         latest_df.to_csv(output_file, index=False)
         print(f"[更新] {output_file} に最新{minutes}分を書き出しました。")
 
