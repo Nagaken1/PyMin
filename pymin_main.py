@@ -92,9 +92,10 @@ def wait_for_latest_line_change(prev_last_line: str, file_path: str, timeout: in
     print(f"[WARNING] ファイル {file_path} に最終行の変化が検出されませんでした。")
     return False, prev_last_line
 
-def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_file: str = "latest_ohlc.csv"):
+def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_file: str = "latest_ohlc.csv", prev_last_line: str = "") -> str:
     """
     ディレクトリ内のCSVファイルから、最新2つを読み込み、N分間のデータを抽出して出力。
+    変更があった場合に最新の最終行を返す。
     """
     try:
         files = [
@@ -104,21 +105,10 @@ def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_fil
 
         if len(files) < 1:
             print("[警告] 対象CSVファイルが見つかりませんでした")
-            return
+            return prev_last_line
 
         files_sorted = sorted(files, reverse=True)
         target_files = files_sorted[:2]
-
-        # 最新ファイルの更新完了を待つ
-        latest_file_path = os.path.join(base_dir, target_files[0])
-
-        prev_last_line = get_last_line(latest_file_path)
-
-        updated, prev_last_line = wait_for_latest_line_change(prev_last_line, latest_file_path)
-        if updated:
-            print("[INFO] ファイルが更新されました")
-        else:
-            print("[INFO] 変化なし")
 
         combined_df = pd.DataFrame()
 
@@ -133,21 +123,47 @@ def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_fil
 
         if combined_df.empty:
             print("[警告] ファイル読み込みに失敗しました")
-            return
+            return prev_last_line
 
         latest_time = combined_df["Time"].max()
         start_time = latest_time - timedelta(minutes=minutes - 1)
         latest_df = combined_df[combined_df["Time"] >= start_time].copy()
         latest_df.sort_values("Time", inplace=True)
 
-        # フォーマットを YYYY/MM/DD に戻す ← 修正箇所
-        latest_df["Time"] = latest_df["Time"].dt.strftime("%Y/%m/%d %H:%M:%S")
-
         latest_df.to_csv(output_file, index=False)
         print(f"[更新] {output_file} に最新{minutes}分を書き出しました。")
 
+        # 最終行を取得して返す
+        with open(output_file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            return lines[-1].strip() if lines else prev_last_line
+
     except Exception as e:
         print(f"[エラー] 処理中に例外が発生しました: {e}")
+        return prev_last_line
+
+def get_last_line_of_latest_source(base_dir: str) -> str:
+    """
+    base_dir 内で最も新しい _nikkei_mini_future.csv の最終行を取得する。
+    """
+    try:
+        files = [
+            f for f in os.listdir(base_dir)
+            if f.endswith("_nikkei_mini_future.csv") and f[:8].isdigit()
+        ]
+        if not files:
+            return ""
+
+        # 日付順にソートして最新ファイルを取得
+        latest_file = sorted(files, reverse=True)[0]
+        latest_path = os.path.join(base_dir, latest_file)
+
+        with open(latest_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            return lines[-1].strip() if lines else ""
+    except Exception as e:
+        print(f"[ERROR] ソースファイルの最終行取得に失敗: {e}")
+        return ""
 
 def get_token() -> str:
     """APIトークンを取得する"""
@@ -201,7 +217,7 @@ def main():
     # カレントディレクトリ変更（スクリプトのある場所を基準に）
     base_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(base_dir)
-
+    prev_last_line = ""
     # ログ設定
     setup_logger()
 
@@ -226,7 +242,7 @@ def main():
     ohlc_writer = OHLCWriter()
     tick_writer = TickWriter(enable_output=ENABLE_TICK_OUTPUT)
     price_handler = PriceHandler(ohlc_writer, tick_writer)
-    last_export_minute = None
+    #last_export_minute = None
 
     trade_date = get_trade_date(datetime.now())
     END_TIME = datetime.combine(trade_date, dtime(6, 5)) if is_night_session(now) else None
@@ -247,17 +263,21 @@ def main():
                 print("[INFO] 取引終了時刻になったため、自動終了します。")
                 break
 
-            # 1分おきの書き出し処理
-            if now.second == 1 and now.minute != last_export_minute:
-                price_handler.fill_missing_minutes(now) #補完処理を呼び出し
-
-                export_latest_minutes_from_files(
-                    base_dir="csv",
-                    minutes=3,
-                    output_file="latest_ohlc.csv"
-                )
-
-                last_export_minute = now.minute
+            # 1分おきのファイル更新監視（最終行の変化で検出）
+            if now.second == 1:
+                current_last_line = get_last_line_of_latest_source("csv")
+                if current_last_line != prev_last_line:
+                    print("[INFO] ソースファイルが更新されたため、最新3分を書き出します。")
+                    prev_last_line = current_last_line
+                    export_latest_minutes_from_files(
+                        base_dir="csv",
+                        minutes=3,
+                        output_file="latest_ohlc.csv",
+                        prev_last_line=prev_last_line  # ← オプションで渡すならそのまま
+                    )
+                    #last_export_minute = now.minute
+                else:
+                    print("[INFO] ソースに変化なし。")
 
             time.sleep(1)
 
