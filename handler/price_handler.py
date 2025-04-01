@@ -94,11 +94,14 @@ class PriceHandler:
         print(f"[DEBUG][fill_missing_minutes] 補完開始: from {last_minute + timedelta(minutes=1)} to {current_minute - timedelta(minutes=1)}")
 
         while last_minute + timedelta(minutes=1) < current_minute:
-            last_minute += timedelta(minutes=1)
-            if is_market_closed(last_minute):
-                print(f"[DEBUG][fill_missing_minutes] 無音時間のため補完スキップ: {last_minute}")
-                continue  # ← 無音時間なら補完スキップ
+            next_minute = last_minute + timedelta(minutes=1)
 
+            if is_market_closed(next_minute):
+                print(f"[DEBUG][fill_missing_minutes] 補完対象が無音時間のためスキップ: {next_minute}")
+                last_minute = next_minute  # スキップしても時刻は進める
+                continue
+
+            last_minute = next_minute
             last_close = self.ohlc_builder.ohlc["close"]
 
             dummy = {
@@ -121,6 +124,7 @@ class PriceHandler:
             else:
                 print(f"[DEBUG][fill_missing_minutes] 重複のため補完打ち切り: {dummy_time}")
                 break  # A: 順序・重複チェックのため break で終了
+
 
     def finalize_ohlc(self):
         final = self.ohlc_builder._finalize_ohlc()
