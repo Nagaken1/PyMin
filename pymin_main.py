@@ -193,12 +193,8 @@ def main():
 
                 last_export_minute = now.minute
 
-
-
             time.sleep(1)
 
-    except KeyboardInterrupt:
-        print("[STOP] ユーザーによる終了要求")
     finally:
         price_handler.finalize_ohlc()
         ohlc_writer.close()
