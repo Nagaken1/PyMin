@@ -85,6 +85,7 @@ def export_latest_minutes_from_files(base_dir: str, minutes: int = 3, output_fil
 def get_last_line_of_latest_source(base_dir: str) -> str:
     """
     base_dir 内で最も新しい _nikkei_mini_future.csv の最終行を取得する。
+    余計な改行・空白を除去して比較できるようにする。
     """
     try:
         files = [
@@ -208,6 +209,10 @@ def main():
             if now.minute != last_checked_minute and now.second == 1:
                 for attempt in range(5):
                     current_last_line = get_last_line_of_latest_source("csv")
+
+                    print(f"[DEBUG] 前回の最終行: {repr(prev_last_line)}")
+                    print(f"[DEBUG] 今回の最終行: {repr(current_last_line)}")
+
                     if current_last_line != prev_last_line:
                         print("[INFO] ソースファイルが更新されたため、最新3分を書き出します。")
                         new_last_line = export_latest_minutes_from_files(
@@ -216,7 +221,7 @@ def main():
                             output_file="latest_ohlc.csv",
                             prev_last_line=prev_last_line
                         )
-                        prev_last_line = new_last_line
+                        prev_last_line = new_last_line.strip()
                         break
                     else:
                         time.sleep(1)  # 最大5回リトライ
