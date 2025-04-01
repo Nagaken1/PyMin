@@ -209,17 +209,19 @@ def main():
                     current_last_line = get_last_line_of_latest_source("csv")
                     if current_last_line != prev_last_line:
                         print("[INFO] ソースファイルが更新されたため、最新3分を書き出します。")
-                        prev_last_line = current_last_line
-                        export_latest_minutes_from_files(
-                            base_dir="csv",
-                            minutes=3,
-                            output_file="latest_ohlc.csv",
-                            prev_last_line=prev_last_line
-                        )
-                        break
-                    else:
-                        print(f"[INFO] ソースに変化なし({attempt+1}/5)")
-                        time.sleep(1)
+
+                # 実際の書き出し処理を行い、その結果として新しい最終行を取得
+                new_last_line = export_latest_minutes_from_files(
+                    base_dir="csv",
+                    minutes=3,
+                    output_file="latest_ohlc.csv",
+                    prev_last_line=prev_last_line
+                )
+                prev_last_line = new_last_line  # ← ここで初めて更新
+                break
+            else:
+                print(f"[INFO] 試行 {attempt+1}: 変化なし。")
+                time.sleep(1)
 
     finally:
         price_handler.finalize_ohlc()
