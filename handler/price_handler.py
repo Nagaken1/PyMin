@@ -96,6 +96,8 @@ class PriceHandler:
         while last_minute + timedelta(minutes=1) <= current_minute:
             next_minute = last_minute + timedelta(minutes=1)
 
+            print(f"[TRACE] next_minute = {next_minute}")
+
             if is_market_closed(next_minute):
                 print(f"[DEBUG][fill_missing_minutes] 補完対象が無音時間のためスキップ: {next_minute}")
                 last_minute = next_minute  # スキップしても時刻は進める
@@ -115,6 +117,9 @@ class PriceHandler:
             }
 
             dummy_time = dummy["time"].replace(second=0, microsecond=0)
+
+            print(f"[TRACE] dummy_time = {dummy_time}, last_written_minute = {self.last_written_minute}")
+
             if not self.last_written_minute or dummy_time > self.last_written_minute:
                 print(f"[DEBUG][fill_missing_minutes] ダミー補完: {dummy_time}")
                 self.ohlc_writer.write_row(dummy)
