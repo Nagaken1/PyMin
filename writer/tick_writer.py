@@ -21,7 +21,7 @@ class TickWriter:
 
         if self.enable_output:
             date_str = self.current_date.strftime("%Y%m%d")
-            tick_dir = "tick"
+            tick_dir = "csv"
             os.makedirs(tick_dir, exist_ok=True)
 
             self.file_path = os.path.join(tick_dir, f"{date_str}_tick.csv")
@@ -34,7 +34,7 @@ class TickWriter:
 
         #  first_tick 出力ファイルは常に最新1行を保持（固定名ファイル）
         self.first_file_path =  "latest_first_tick.csv"
-        os.makedirs("tick", exist_ok=True)
+        os.makedirs("csv", exist_ok=True)
         self.last_written_minute = None  # 1分ごとの重複記録防止用
 
         # 初回オープンでヘッダーが必要なら書く（tell()で確認）
