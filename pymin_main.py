@@ -216,8 +216,8 @@ def main():
                 for attempt in range(30):
                     current_last_line = get_last_line_of_latest_source("csv")
 
-                    print(f"[DEBUG] 前回の最終行: {repr(prev_last_line)}")
-                    print(f"[DEBUG] 今回の最終行: {repr(current_last_line)}")
+                    #print(f"[DEBUG] 前回の最終行: {repr(prev_last_line)}")
+                    #print(f"[DEBUG] 今回の最終行: {repr(current_last_line)}")
 
                     if current_last_line != prev_last_line:
                         print("[INFO] ソースファイルが更新されたため、最新3分を書き出します。")
