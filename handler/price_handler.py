@@ -108,6 +108,14 @@ class PriceHandler:
 
         print(f"[TRACE] dummy_time = {dummy_time}, last_written_minute = {self.last_written_minute}")
 
+        if not self.last_written_minute or dummy_time > self.last_written_minute:
+            print(f"[DEBUG][fill_missing_minutes] ダミー補完: {dummy_time}")
+            self.ohlc_writer.write_row(dummy)
+            self.last_written_minute = dummy_time
+            self.ohlc_builder.current_minute = dummy_time  # A: current_minute を進めて順序を保証
+            self.ohlc_builder.ohlc = dummy
+        else:
+            print(f"[DEBUG][fill_missing_minutes] 重複のため補完打ち切り: {dummy_time}")
 
 
     def finalize_ohlc(self):
