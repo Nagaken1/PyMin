@@ -209,7 +209,13 @@ def main():
                 print("[INFO] 取引終了時刻になったため、自動終了します。")
                 break
 
+            print(f"[DEBUG] now.minute: {repr(now.minute)}")
+            print(f"[DEBUG] last_checked_minute: {repr(last_checked_minute)}")
+            print(f"[DEBUG] now.second: {repr(now.second)}")
             if now.minute != last_checked_minute and now.second == 1:
+                # ダミー補完を実行
+                price_handler.fill_missing_minutes(now)
+
                 for attempt in range(30):
                     current_last_line = get_last_line_of_latest_source("csv")
 
