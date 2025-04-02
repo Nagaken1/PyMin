@@ -6,7 +6,7 @@ from datetime import datetime
 class TickWriter:
     """
     受信したすべてのティックデータ（価格・時刻）をCSVファイルに記録するクラス。
-    日付ごとにファイルを分割し、「tick/」フォルダに保存する。
+    日付ごとにファイルを分割し、「csv/」フォルダに保存する。
     """
 
     def __init__(self, enable_output=True):
@@ -54,7 +54,7 @@ class TickWriter:
             if self.enable_output and self.file:
                 self.file.close()
                 date_str = timestamp.strftime("%Y%m%d")
-                tick_dir = "tick"
+                tick_dir = "csv"
                 self.file_path = os.path.join(tick_dir, f"{date_str}_tick.csv")
                 self.file = open(self.file_path, "a", newline="", encoding="utf-8")
                 self.writer = csv.writer(self.file)
