@@ -79,56 +79,35 @@ class PriceHandler:
             return
 
         last_minute = self.ohlc_builder.current_minute
-        current_minute = now.replace(second=0, microsecond=0, tzinfo=None)
 
         print(f"[DEBUG] fill_missing_minutes() 呼び出し")
         print(f"[DEBUG] last_ohlc.ohlc_time = {last_minute}")
-        print(f"[DEBUG] current_minute = {current_minute}")
         print(f"[DEBUG] self.last_written_minute = {self.last_written_minute}")
 
-        # 補完処理で「直近の current_minute の1分後」を補完しないように明示的に制限
-        if current_minute <= last_minute:
-            print(f"[DEBUG][fill_missing_minutes] 同分または過去分のため補完スキップ: now={now}, current={current_minute}")
-            return  # 同じ分内なら補完不要
+        next_minute = last_minute + timedelta(minutes=1)
 
-        print(f"[DEBUG][fill_missing_minutes] 補完開始: from {last_minute + timedelta(minutes=1)} to {current_minute - timedelta(minutes=1)}")
+        print(f"[TRACE] next_minute = {next_minute}")
 
-        while last_minute + timedelta(minutes=1) <= current_minute:
-            next_minute = last_minute + timedelta(minutes=1)
+        if is_market_closed(next_minute):
+            print(f"[DEBUG][fill_missing_minutes] 補完対象が無音時間のためスキップ: {next_minute}")
+            return  # 市場休止中は何もしない
 
-            print(f"[TRACE] next_minute = {next_minute}")
+        last_close = self.ohlc_builder.ohlc["close"]
 
-            if is_market_closed(next_minute):
-                print(f"[DEBUG][fill_missing_minutes] 補完対象が無音時間のためスキップ: {next_minute}")
-                last_minute = next_minute  # スキップしても時刻は進める
-                continue
+        dummy = {
+            "time": next_minute,
+            "open": last_close,
+            "high": last_close,
+            "low": last_close,
+            "close": last_close,
+            "is_dummy": True,
+            "contract_month": "dummy"
+        }
 
-            last_minute = next_minute
-            last_close = self.ohlc_builder.ohlc["close"]
+        dummy_time = dummy["time"].replace(second=0, microsecond=0)
 
-            dummy = {
-                "time": last_minute,
-                "open": last_close,
-                "high": last_close,
-                "low": last_close,
-                "close": last_close,
-                "is_dummy": True,
-                "contract_month": "dummy"
-            }
+        print(f"[TRACE] dummy_time = {dummy_time}, last_written_minute = {self.last_written_minute}")
 
-            dummy_time = dummy["time"].replace(second=0, microsecond=0)
-
-            print(f"[TRACE] dummy_time = {dummy_time}, last_written_minute = {self.last_written_minute}")
-
-            if not self.last_written_minute or dummy_time > self.last_written_minute:
-                print(f"[DEBUG][fill_missing_minutes] ダミー補完: {dummy_time}")
-                self.ohlc_writer.write_row(dummy)
-                self.last_written_minute = dummy_time
-                self.ohlc_builder.current_minute = dummy_time  # A: current_minute を進めて順序を保証
-                self.ohlc_builder.ohlc = dummy
-            else:
-                print(f"[DEBUG][fill_missing_minutes] 重複のため補完打ち切り: {dummy_time}")
-                break  # A: 順序・重複チェックのため break で終了
 
 
     def finalize_ohlc(self):
