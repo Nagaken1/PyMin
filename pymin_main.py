@@ -229,7 +229,9 @@ def main():
                         break
                     else:
                         time.sleep(1)  # 最大30回リトライ
-                price_handler.fill_missing_minutes(now)# 30回リトライしてダメだったらダミーを入れる
+                else:
+                    print("[WARNING] 30回リトライしても更新されなかったため、ダミー補完を実行します。")
+                    price_handler.fill_missing_minutes(now)# 30回リトライしてダメだったらダミーを入れる
 
             last_checked_minute = now.minute  # 次の分まで再実行しない
 
