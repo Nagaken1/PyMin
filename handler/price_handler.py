@@ -92,7 +92,7 @@ class PriceHandler:
 
         print(f"[DEBUG][fill_missing_minutes] 補完開始: from {last_minute + timedelta(minutes=1)} to {current_minute - timedelta(minutes=1)}")
 
-        while last_minute + timedelta(minutes=1) <= current_minute:#最後に4本値を書き込んだ時間+1＜＝関数が呼ばれた時間の間、繰り返す
+        while last_minute + timedelta(minutes=1) < current_minute:#最後に4本値を書き込んだ時間+1＜関数が呼ばれた時間の間、繰り返す
             next_minute = last_minute + timedelta(minutes=1)
 
             print(f"[TRACE] next_minute = {next_minute}")
