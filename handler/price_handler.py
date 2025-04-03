@@ -12,13 +12,19 @@ class PriceHandler:
     ファイルへの出力を管理するクラス。
     """
     def __init__(self, ohlc_writer: OHLCWriter, tick_writer: TickWriter):
+
         self.ohlc_builder = OHLCBuilder()
         self.ohlc_writer = ohlc_writer
         self.tick_writer = tick_writer
         self.last_written_minute = None
-        #self.first_ohlc_skipped = False
+        self.latest_price = None
+        self.latest_timestamp = None
+
 
     def handle_tick(self, price: float, timestamp: datetime):
+        # Tickの最新情報を記録
+        self.latest_price = price
+        self.latest_timestamp = timestamp
 
         # 限月をあらかじめ取得（常に必要なので）
         contract_month = get_active_term(timestamp)

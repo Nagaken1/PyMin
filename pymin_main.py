@@ -10,7 +10,7 @@ import csv
 
 from config.logger import setup_logger
 from config.settings import API_BASE_URL, get_api_password
-from config.settings import ENABLE_TICK_OUTPUT
+from config.settings import ENABLE_TICK_OUTPUT, DUMMY_TICK_TEST_MODE,DUMMY_URL
 
 from client.kabu_websocket import KabuWebSocketClient
 from handler.price_handler import PriceHandler
@@ -18,6 +18,7 @@ from writer.ohlc_writer import OHLCWriter
 from writer.tick_writer import TickWriter
 from utils.time_util import get_exchange_code, get_trade_date, is_night_session
 from symbol_resolver import get_active_term, get_symbol_code
+from client.dummy_websocket_client import DummyWebSocketClient
 
 def get_last_line(file_path: str) -> str:
     """
@@ -157,36 +158,45 @@ def export_connection_info(symbol_code: str, exchange_code: int, token: str, out
         print(f"[ERROR] 接続情報の書き出しに失敗しました: {e}")
 
 def main():
+    print("実行中のPython:", sys.executable)
     now = datetime.now().replace(tzinfo=None)
+
     # カレントディレクトリ変更（スクリプトのある場所を基準に）
     base_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(base_dir)
     prev_last_line = ""
+
     # ログ設定
     setup_logger()
-
-    token = get_token()
-    if not token:
-        return
-
-    active_term = get_active_term(now)
-    symbol_code = get_symbol_code(active_term, token)
-    if not symbol_code:
-        print("[ERROR] 銘柄コード取得失敗")
-        return
-
-    exchange_code = get_exchange_code(now)
-    if not register_symbol(symbol_code, exchange_code, token):
-        return
-
-    # 接続情報を出力
-    export_connection_info(symbol_code, exchange_code, token)
 
     # 初期化
     ohlc_writer = OHLCWriter()
     tick_writer = TickWriter(enable_output=ENABLE_TICK_OUTPUT)
     price_handler = PriceHandler(ohlc_writer, tick_writer)
-    #last_export_minute = None
+
+    if DUMMY_TICK_TEST_MODE:
+        # ダミーWebSocketクライアント起動
+        ws_client = DummyWebSocketClient(price_handler, uri = DUMMY_URL)
+    else:
+        token = get_token()
+        if not token:
+            return
+
+        active_term = get_active_term(now)
+        symbol_code = get_symbol_code(active_term, token)
+        if not symbol_code:
+            print("[ERROR] 銘柄コード取得失敗")
+            return
+
+        exchange_code = get_exchange_code(now)
+        if not register_symbol(symbol_code, exchange_code, token):
+            return
+
+        # 接続情報を出力
+        export_connection_info(symbol_code, exchange_code, token)
+
+        # WebSocketクライアント起動
+        ws_client = KabuWebSocketClient(price_handler)
 
     trade_date = get_trade_date(datetime.now())
     END_TIME = datetime.combine(trade_date, dtime(6, 5)) if is_night_session(now) else None
@@ -195,8 +205,6 @@ def main():
         print("[INFO] すでに取引終了時刻を過ぎているため、起動せず終了します。")
         return
 
-    # WebSocketクライアント起動
-    ws_client = KabuWebSocketClient(price_handler)
     ws_client.start()
 
     last_checked_minute = -1
