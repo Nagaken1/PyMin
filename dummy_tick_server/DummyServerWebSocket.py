@@ -7,7 +7,7 @@ import os
 import sys
 import inspect
 
-SEND_INTERVAL = 0.01  # 秒
+SEND_INTERVAL = 0.1  # 秒
 DURATION = 600     # 送信時間（秒）= 10分
 
 # ✅ デバッグ出力
