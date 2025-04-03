@@ -40,8 +40,13 @@ class PriceHandler:
 
             #  出力対象は「現在のティックより1分以上前のOHLCのみ」
             current_tick_minute = timestamp.replace(second=0, microsecond=0, tzinfo=None)
+
+            print(f"[DEBUG][handle_tick] ohlc_time = {ohlc_time}, current_tick_minute = {current_tick_minute}")
+            print(f"[DEBUG][handle_tick] last_written_minute = {self.last_written_minute}")
+
             if ohlc_time >= current_tick_minute:
                 # 未来または現在分 → まだ未確定なので書き込まない
+                print(f"[SKIP][handle_tick] {ohlc_time} は現在分または未来分 → 未確定でスキップ")
                 return
 
             ohlc["is_dummy"] = False  # 明示的に dummy でないことを付与
@@ -61,6 +66,7 @@ class PriceHandler:
                 self.last_written_minute = ohlc_time
                 self.ohlc_builder.current_minute = ohlc_time  # B: 整合性を保つために current_minute を更新
 
+            print(f"[DEBUG][handle_tick] 確定 OHLC 書き込み: {ohlc_time}, 値: {ohlc}")
 #        dummy_ohlc = self.ohlc_builder.finalize_with_next_session_price(timestamp)
 #        if dummy_ohlc:
 #            dummy_time = dummy_ohlc["time"].replace(second=0, microsecond=0)
