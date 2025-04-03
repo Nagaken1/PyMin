@@ -211,9 +211,15 @@ def main():
 
     try:
         while True:
-            now = datetime.now().replace(tzinfo=None)
+            #now = datetime.now().replace(tzinfo=None)
+            # Tickのtimestampを仮想現在時刻として扱う
+            if price_handler.latest_timestamp is None:
+                time.sleep(0.1)
+                continue  # Tickが来るまで待機
 
-            if END_TIME and datetime.now().replace(tzinfo=None) >= END_TIME:
+            now = price_handler.latest_timestamp.replace(second=0, microsecond=0)
+
+            if END_TIME and now >= END_TIME:
                 print("[INFO] 取引終了時刻になったため、自動終了します。")
                 break
 
@@ -238,9 +244,14 @@ def main():
                     else:
                         time.sleep(1)  # 最大30回リトライ
 
-                #  補完処理のログ出力（必ず毎分）
+                # OHLC補完処理（ザラバ）
                 print(f"[INFO] {now.strftime('%Y/%m/%d %H:%M:%S')} に fill_missing_minutes を呼び出します。")
                 price_handler.fill_missing_minutes(now)
+
+                # プレクロージング補完処理（Tickのtimestampベース）
+                if (now.hour == 15 and now.minute == 40) or (now.hour == 5 and now.minute == 55):
+                    print(f"[INFO] プレクロージング補完を呼び出します: {price_handler.latest_timestamp}")
+                    price_handler.fill_pre_closing_minutes(price_handler.latest_timestamp)
 
                 last_checked_minute = now.minute  # 次の分まで再実行しない
 

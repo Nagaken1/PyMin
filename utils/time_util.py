@@ -50,3 +50,7 @@ def is_night_session(now: datetime) -> bool:
     """
     t = now.time()
     return t >= dtime(17, 0) or t < dtime(6, 0)
+
+def is_pre_closing_minute(minute: datetime) -> bool:
+    t = minute.time()
+    return (dtime(15, 40) <= t <= dtime(15, 44)) or (dtime(5, 55) <= t <= dtime(5, 59))
