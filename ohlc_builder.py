@@ -18,9 +18,10 @@ class OHLCBuilder:
         ティックを受信してOHLCを更新。新しい1分が始まったら前のOHLCを返す。
         """
         minute = timestamp.replace(second=0, microsecond=0, tzinfo=None)
-
+        print(f"[DEBUG][update] 呼び出し: price={price}, timestamp={timestamp}, minute={minute}")
         # 初回（current_minuteがまだない）
         if self.current_minute is None:
+            print(f"[DEBUG][update] 初回処理: 初期のcurrent_minute={minute}, price={price}")
             self.current_minute = minute
             self.ohlc = {
                 "time": minute,
@@ -40,7 +41,7 @@ class OHLCBuilder:
             self.ohlc["high"] = max(self.ohlc["high"], price)
             self.ohlc["low"] = min(self.ohlc["low"], price)
             self.ohlc["close"] = price
-            #print(f"[DEBUG][update] 同じ分の更新: {minute} → High={self.ohlc['high']} Low={self.ohlc['low']} Close={price}")
+            print(f"[DEBUG][update] 同分内更新: {minute} → High={self.ohlc['high']}, Low={self.ohlc['low']}, Close={price}")
             return None
 
         completed = self.ohlc.copy()
@@ -57,7 +58,7 @@ class OHLCBuilder:
             "is_dummy": False,
             "contract_month": contract_month
         }
-        print(f"[DEBUG][update] 新しい分開始: {minute}, 前の分完成: {completed['time']}")
+        print(f"[DEBUG][update] 新しい分に切り替え: 新={minute}, 完了={completed['time']} 値={completed}")
         return completed
 
     def _finalize_ohlc(self) -> dict:
