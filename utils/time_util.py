@@ -51,6 +51,10 @@ def is_night_session(now: datetime) -> bool:
     t = now.time()
     return t >= dtime(17, 0) or t < dtime(6, 0)
 
-def is_pre_closing_minute(minute: datetime) -> bool:
-    t = minute.time()
-    return (dtime(15, 40) <= t <= dtime(15, 44)) or (dtime(5, 55) <= t <= dtime(5, 59))
+def is_closing_minute(minute: dtime) -> bool:
+    """
+    クロージング時間（15:45 または 6:00）かを判定
+    """
+    # t = minute.time() ← これは不要
+    t = minute  # そのまま使えばOK
+    return t == dtime(15, 45) or t == dtime(6, 0)

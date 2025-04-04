@@ -16,7 +16,7 @@ from client.kabu_websocket import KabuWebSocketClient
 from handler.price_handler import PriceHandler
 from writer.ohlc_writer import OHLCWriter
 from writer.tick_writer import TickWriter
-from utils.time_util import get_exchange_code, get_trade_date, is_night_session
+from utils.time_util import get_exchange_code, get_trade_date, is_night_session, is_closing_minute
 from symbol_resolver import get_active_term, get_symbol_code
 from client.dummy_websocket_client import DummyWebSocketClient
 
@@ -211,8 +211,6 @@ def main():
 
     try:
         while True:
-            #now = datetime.now().replace(tzinfo=None)
-            # Tickのtimestampを仮想現在時刻として扱う
             if price_handler.latest_timestamp is None:
                 time.sleep(0.1)
                 continue  # Tickが来るまで待機
@@ -223,41 +221,47 @@ def main():
                 print("[INFO] 取引終了時刻になったため、自動終了します。")
                 break
 
-            if now.minute != last_checked_minute:
+            # 通常時（プレクロージング以外）
+            if not is_closing_minute(now.time()):
+                if now.minute != last_checked_minute:
+                    for attempt in range(30):
+                        current_last_line = get_last_line_of_latest_source("csv")
+                        if current_last_line != prev_last_line:
+                            print("[INFO] ソースファイルが更新されたため、最新3分を書き出します。")
+                            new_last_line = export_latest_minutes_from_files(
+                                base_dir="csv",
+                                minutes=3,
+                                output_file="latest_ohlc.csv",
+                                prev_last_line=prev_last_line
+                            )
+                            prev_last_line = new_last_line.strip()
+                            break
+                        else:
+                            time.sleep(1)  # 最大30回リトライ
 
-                for attempt in range(30):
-                    current_last_line = get_last_line_of_latest_source("csv")
+                    # ザラバ中の補完処理（fill_missing_minutes）
+                    print(f"[INFO] {now.strftime('%Y/%m/%d %H:%M:%S')} に fill_missing_minutes を呼び出します。")
+                    price_handler.fill_missing_minutes(now)
 
-                    #print(f"[DEBUG] 前回の最終行: {repr(prev_last_line)}")
-                    #print(f"[DEBUG] 今回の最終行: {repr(current_last_line)}")
+                    last_checked_minute = now.minute
 
-                    if current_last_line != prev_last_line:
-                        print("[INFO] ソースファイルが更新されたため、最新3分を書き出します。")
-                        new_last_line = export_latest_minutes_from_files(
-                            base_dir="csv",
-                            minutes=3,
-                            output_file="latest_ohlc.csv",
-                            prev_last_line=prev_last_line
-                        )
-                        prev_last_line = new_last_line.strip()
-                        break
-                    else:
-                        time.sleep(1)  # 最大30回リトライ
+            # プレクロージング時間帯（15:40〜15:44 または 5:55〜5:59）
+            else:
+                # プレクロージング・クロージングtick処理
+                if (now.hour == 15 and now.minute == 45) or (now.hour == 6 and now.minute == 0):
+                    print(f"[INFO] クロージングOHLCを生成: {now}")
+                    print(f"[INFO] クロージングtickをhandle_tickに送ります: {price_handler.latest_price} @ {now}")
+                    price_handler.handle_tick(price_handler.latest_price or 0, now)
 
-                # OHLC補完処理（ザラバ）
-                print(f"[INFO] {now.strftime('%Y/%m/%d %H:%M:%S')} に fill_missing_minutes を呼び出します。")
-                price_handler.fill_missing_minutes(now)
-
-                # プレクロージング補完処理（Tickのtimestampベース）
-                if (now.hour == 15 and now.minute == 40) or (now.hour == 5 and now.minute == 55):
-                    print(f"[INFO] プレクロージング補完を呼び出します: {price_handler.latest_timestamp}")
-                    price_handler.fill_pre_closing_minutes(price_handler.latest_timestamp)
-
-                last_checked_minute = now.minute  # 次の分まで再実行しない
-
+                    print("[INFO] クロージングの時間のため、1本のみ更新します。")
+                    export_latest_minutes_from_files(
+                        base_dir="csv",
+                        minutes=3,
+                        output_file="latest_ohlc.csv",
+                        prev_last_line=prev_last_line
+                    )
 
             time.sleep(1)
-
 
 
     finally:
